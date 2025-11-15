@@ -1,0 +1,31 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.so
+
+# --- Entornos virtuales ---
+.venv/
+venv/
+env/
+
+# --- Variables secretas ---
+.env
+*.env
+
+# --- Logs ---
+*.log
+
+# --- Editor y sistema ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# --- Cache ---
+.pytest_cache/
+.cache/
+
+# --- PyInstaller ---
+*.spec
+dist/
+build/
