@@ -1,17 +1,22 @@
-name: CI Pipeline
+name: Backend CI
 
 on:
   push:
-    branches: ["**"]
+    branches:
+      - "**" # Todas las branches (develop, main, feature/*, fix/*, etc.)
     paths:
       - "Backend/**"
+      - ".github/workflows/ci-back.yml" # Re-ejecutar si el workflow cambia
   pull_request:
-    branches: ["**"]
+    branches:
+      - develop
+      - main
     paths:
       - "Backend/**"
+      - ".github/workflows/ci-back.yml"
 
 concurrency:
-  group: ci-pipeline-${{ github.ref }}
+  group: backend-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -57,19 +62,21 @@ jobs:
       - name: Set up Python
         run: uv python install 3.13
 
+      - name: Cache uv
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/uv
+            Backend/.venv
+          key: ${{ runner.os }}-uv-${{ hashFiles('Backend/uv.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-uv-
+
       - name: Install dependencies
         run: uv sync
 
-      - name: Cache pip
-        uses: actions/cache@v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('Backend/pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
       - name: Run tests
-        run: uv run pytest -v
+        run: uv run pytest -v --tb=short
 
   # Job 3: Status check
   ci-status:
