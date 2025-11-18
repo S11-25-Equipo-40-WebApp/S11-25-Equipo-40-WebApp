@@ -8,7 +8,7 @@ commit_msg_file=$1
 commit_msg=$(cat "$commit_msg_file")
 
 # Lista de emojis válidos según GIT_WORKFLOW.md
-valid_emojis="✨|🐛|📝|💄|🎨|♻️|⚡|✅|🔧|📦|👷|🔥|🚑|🚀|🔒|🗃️|⬆️|⬇️|🚧|💚|🔀|⏪|🎉|🔖"
+valid_emojis="🎨|⚡️|📝|🔥|🐛|🚑️|✨|📝|🚀|💄|🎉|✅|🔒️|🔐|🔖|🚨|🚧|💚|⬇️|⬆️|📌|👷|📈|♻️|➕|➖|🔧|🔨|🌐|✏️|💩|⏪️|🔀|📦️|👽️|🚚|📄|💥|🍱|♿️|💡|🍻|💬|🗃️|🔊|🔇|👥|🚸|🏗️|📱|🤡|🥚|🙈|📸|⚗️|🔍️|🏷️|🌱|🚩|🥅|💫|🗑️|🛂|🩹|🧐|⚰️|🧪|👔|🩺|🧱|🧑‍💻|💸|🧵|🦺|✈️"
 
 # Pattern: emoji + espacio + tipo + : + descripción
 pattern="^($valid_emojis) .+:.+"
@@ -29,7 +29,7 @@ else
     echo "  🎨 Style: format code with ruff"
     echo "  ♻️ Refactor: simplify service logic"
     echo ""
-    echo "See GIT_WORKFLOW.md for all valid emojis"
+    echo "See https://gitmoji.dev/ for all valid emojis"
     echo ""
     exit 1
 fi
