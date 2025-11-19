@@ -112,8 +112,8 @@ uv add --dev paquete
 Ver documentación detallada en la raíz del proyecto:
 
 - **[README.md](../README.md)** - Documentación principal del proyecto
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Arquitectura y patrones de diseño
-- **[GIT_WORKFLOW.md](GIT_WORKFLOW.md)** - Convenciones de Git y commits
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Arquitectura y patrones de diseño
+- **[GIT_WORKFLOW.md](./docs/GIT_WORKFLOW.md)** - Convenciones de Git y commits
 
 ## 🏗️ Estructura del Backend
 
