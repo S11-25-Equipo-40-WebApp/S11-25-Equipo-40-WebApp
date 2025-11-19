@@ -16,14 +16,8 @@ WORKDIR /app
 # Copy only the files needed to resolve dependencies (pyproject + lock)
 COPY pyproject.toml uv.lock ./
 
-# Create a virtualenv and install dependencies with uv (this will populate .venv)
-RUN python -m venv .venv \
-    && . .venv/bin/activate \
-    && uv sync
-
-# Leave .venv in builder so we can copy it into the final image (keeps console-scripts)
-RUN python -m pip install --upgrade pip setuptools wheel \
-    && uv sync
+# Install dependencies with uv (creates .venv automatically and installs all packages)
+RUN uv sync
 
 ## ------------------------------- Production Stage ------------------------------ ##
 FROM python:3.13-slim-bookworm AS production
