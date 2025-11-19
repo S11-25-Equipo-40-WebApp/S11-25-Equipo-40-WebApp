@@ -90,6 +90,13 @@ Deberías ver la documentación interactiva y los endpoints listados.
 uv run ruff format .
 uv run ruff check --fix .
 
+# Opción Makefile
+# Ejecuta el objetivo `lint` definido en `Backend/Makefile` (formatea y aplica fixes):
+# Desde el directorio del backend:
+make lint
+# Desde la raíz del repositorio:
+make -C Backend lint
+
 # Tests
 uv run pytest
 uv run pytest --cov=app
