@@ -27,7 +27,7 @@ class Settings(BaseSettings):
         """
         Token expiration time based on environment:
         - development: 8 days (for easier testing)
-        - production: 5 minutes (for security)
+        - production: 60 minutes (for security)
         """
         if self.ENVIRONMENT == "production":
             return 60  # 60 minutes in production
