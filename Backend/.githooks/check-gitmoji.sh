@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 
 # Check if commit message follows gitmoji format
 # Format: <emoji> <type>: <description>
