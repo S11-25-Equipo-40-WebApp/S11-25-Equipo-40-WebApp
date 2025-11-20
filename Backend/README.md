@@ -65,14 +65,6 @@ docker-compose up -d
 docker-compose logs -f app
 ```
 
-6. Migraciones (si necesitas ejecutarlas manualmente)
-
-```bash
-# Normalmente el entrypoint aplica migraciones al arrancar el contenedor
-# Si necesitas hacerlo manualmente desde el host:
-uv run alembic upgrade head
-```
-
 ### ✅ Verificar instalación
 
 Abre en tu navegador:
@@ -87,32 +79,27 @@ Deberías ver la documentación interactiva y los endpoints listados.
 
 ```bash
 # Formateo y linting
-uv run ruff format .
-uv run ruff check --fix .
+make lint                      # Formatear y arreglar código automáticamente
+uv run ruff format .           # Solo formatear
+uv run ruff check --fix .      # Solo linting con auto-fix
 
-# Opción Makefile
-# Ejecuta el objetivo `lint` definido en `Backend/Makefile` (formatea y aplica fixes):
-# Desde el directorio del backend:
-make lint
-# Desde la raíz del repositorio:
-make -C Backend lint
+# Migraciones (Docker)
+make create-tables             # Crear nueva migración (interactivo)
+make migrate                   # Aplicar migraciones pendientes
 
 # Tests
 uv run pytest
 uv run pytest --cov=app
 
+# Limpieza
+make clean                     # Limpiar caches y archivos temporales
+make clean-pyc                 # Solo archivos Python cache
+make clean-all CLEAN_VENV=true # Incluir .venv
+
 # Dependencias
 uv add paquete
 uv add --dev paquete
 ```
-
-### 🐛 Problemas comunes
-
-- Puerto 8000 ocupado: `lsof -i :8000` o cambiar mapeo en `docker-compose.yaml`.
-- uv no encontrado: instala con el script de arriba y recarga tu shell (`source ~/.zshrc`).
-- Docker no está corriendo: arrancar Docker Desktop o el servicio del demonio.
-
----
 
 ## 📚 Documentación Completa
 
@@ -121,6 +108,7 @@ Ver documentación detallada en la raíz del proyecto:
 - **[README.md](../README.md)** - Documentación principal del proyecto
 - **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Arquitectura y patrones de diseño
 - **[GIT_WORKFLOW.md](./docs/GIT_WORKFLOW.md)** - Convenciones de Git y commits
+- **[DATABASE.md](./docs/DATABASE.md)** - Documentación de la base de datos
 
 ## 🏗️ Estructura del Backend
 
@@ -171,14 +159,23 @@ docker-compose up              # Levantar servicios
 docker-compose down            # Detener servicios
 docker-compose logs -f app     # Ver logs
 
-# Formateo y linting
+# Formateo y linting (Makefile - Recomendado)
+make lint                      # Formatear y arreglar código
+make clean                     # Limpiar caches
+make clean-all CLEAN_VENV=true # Limpiar todo incluido .venv
+
+# Formateo y linting (Manual)
 uv run ruff format .           # Formatear código
 uv run ruff check .            # Verificar linting
 uv run ruff check --fix .      # Arreglar automáticamente
 
-# Base de datos
-make migrate                   # Aplicar migraciones
-uv run alembic revision --autogenerate -m "mensaje"  # Crear migración
+# Base de datos (Makefile - Recomendado)
+make create-tables             # Crear migración (interactivo, en Docker)
+make migrate                   # Aplicar migraciones (en Docker)
+
+# Base de datos (Manual)
+docker-compose exec app alembic revision --autogenerate -m "mensaje"
+docker-compose exec app alembic upgrade head
 
 # Testing
 uv run pytest                  # Ejecutar tests
@@ -188,25 +185,6 @@ uv run pytest --cov=app        # Con coverage
 uv add paquete                 # Agregar dependencia
 uv add --dev paquete           # Agregar dependencia de desarrollo
 uv sync                        # Sincronizar dependencias
-```
-
-### Desarrollo Local (Sin Docker)
-
-Si prefieres desarrollar sin Docker:
-
-```bash
-# 1. Tener PostgreSQL corriendo localmente
-# brew install postgresql (macOS)
-# brew services start postgresql
-
-# 2. Actualizar DATABASE_URL en .env
-# DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/testify_db
-
-# 3. Ejecutar aplicación
-uv run fastapi dev app/main.py
-
-# 4. Aplicar migraciones
-uv run alembic upgrade head
 ```
 
 ## 🧪 Testing
