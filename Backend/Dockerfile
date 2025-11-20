@@ -49,6 +49,7 @@ RUN chmod +x ./entrypoint.sh || true
 USER appuser
 
 ENV PATH="/app/.venv/bin:${PATH}"
+ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 EXPOSE 8000
 
