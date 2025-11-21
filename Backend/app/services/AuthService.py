@@ -1,32 +1,36 @@
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.security import create_access_token, hash_password, verify_password
+from app.core.jwt import create_access_token
+from app.core.security import hash_password, verify_password
 from app.models.user import User
+from app.schemas.auth import UserRegister
 
 
 class AuthService:
     @staticmethod
-    def register_user(db: Session, data):
-        existing = db.query(User).filter(User.email == data.email).first()
-        if existing:
-            raise ValueError("Email already registered")
+    async def register_user(db, data: UserRegister):
+        stmt = select(User).where(User.email == data.email)
+        result = await db.execute(stmt)
+        existing = result.scalar_one_or_none()
+        password = hash_password(data.password)
 
-        new_user = User(
-            email=data.email,
-            name=data.name,
-            surname=data.surname,
-            hashed_password=hash_password(data.password),
-            roles=["user"],
+        if existing:
+            raise ValueError("El correo ya está registrado")
+        user = User(
+            email=data.email, name=data.name, surname=data.surname, hashed_password=password
         )
 
-        db.add(new_user)
-        db.commit()
-        db.refresh(new_user)
-        return new_user
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
+        return user
 
     @staticmethod
-    def login_user(db: Session, email: str, password: str):
-        user = db.query(User).filter(User.email == email).first()
+    async def login_user(db: Session, email: str, password: str):
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
         if not user or not verify_password(password, user.hashed_password):
             raise ValueError("Invalid credentials")
 

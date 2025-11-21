@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 from fastapi.concurrency import asynccontextmanager
 
+from app.api.router.auth import router as auth_router
 from app.core.config import settings
 from app.core.db import init_db
 
@@ -17,6 +18,7 @@ app = FastAPI(
     version="0.0.1",
     lifespan=lifespan,
 )
+app.include_router(auth_router)
 
 
 @app.get("/")
