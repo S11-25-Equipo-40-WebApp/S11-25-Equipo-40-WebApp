@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Search, Trash2, ThumbsUp } from "lucide-react"
 import { useState, useEffect } from "react"
 import Image from "next/image"
+import Link from "next/link";
+
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
@@ -143,8 +145,10 @@ export default function TestimonialsPage() {
         <SidebarInset className="bg-[#0f172a]">
           <div className="p-8">
             <div className="flex justify-between items-center mb-6">
-              <h1 className="text-3xl font-bold">Gestión de Testimonios</h1>
-              <Button className="bg-blue-600 hover:bg-blue-700">+ Nuevo Testimonio</Button>
+            <h1 className="text-3xl font-bold">Gestión de Testimonios</h1>
+              <Link href="/testimonials/create">
+                <Button className="bg-blue-600 hover:bg-blue-700">+ Nuevo Testimonio</Button>
+              </Link>
             </div>
 
             <div className="flex gap-4 mb-6">
