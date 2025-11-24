@@ -16,7 +16,6 @@ class User(SQLModel, table=True):
 
     is_active: bool = Field(default=True)
 
-    # JSONB CORRECTO
     roles: dict | None = Field(default=None, sa_column=Column(JSONB))
 
     hashed_password: str = Field(nullable=False, max_length=255)

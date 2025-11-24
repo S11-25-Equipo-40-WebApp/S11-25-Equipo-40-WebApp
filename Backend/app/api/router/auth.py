@@ -24,3 +24,12 @@ async def login(data: UserLogin, db: Session = Depends(get_session)):
         return {"access_token": token, "token_type": "bearer"}
     except ValueError as e:
         raise HTTPException(status_code=401, detail=str(e)) from None
+
+
+@router.get("/me")
+async def get_user(data: UserLogin, db: Session = Depends(get_session)):
+    try:
+        user = await AuthService.get_user(db, data.email)
+        return user
+    except ValueError as e:
+        raise HTTPException(status_code=401, detail=str(e)) from None

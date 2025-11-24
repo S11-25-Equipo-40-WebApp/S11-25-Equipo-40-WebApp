@@ -36,3 +36,11 @@ class AuthService:
 
         token = create_access_token({"sub": str(user.id), "roles": user.roles})
         return token
+
+    @staticmethod
+    async def get_user(db: Session, email: str):
+        result = await db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            raise ValueError("User not found")
+        return user
