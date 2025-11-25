@@ -25,7 +25,7 @@ class TestimonialCreate(SQLModel):
         return values
 
 
-class TestimonialAuthor:
+class TestimonialAuthor(SQLModel):
     name: str
     surname: str
 
