@@ -26,8 +26,8 @@ class TestimonialCreate(SQLModel):
 
 
 class TestimonialAuthor(SQLModel):
-    name: str
-    surname: str
+    name: str | None = None
+    surname: str | None = None
 
 
 class TestimonialResponse(TestimonialCreate):
