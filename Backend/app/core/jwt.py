@@ -2,11 +2,10 @@ from datetime import datetime, timedelta
 
 import jwt
 
-SECRET_KEY = "CAMBIA_ESTO"
-ALGORITHM = "HS256"
+from app.core.config import settings
 
 
 def create_access_token(data: dict):
     to_encode = data.copy()
     to_encode["exp"] = datetime.utcnow() + timedelta(hours=6)
-    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)

@@ -1,24 +1,27 @@
-import uuid
-from datetime import datetime
+from enum import StrEnum
+from typing import TYPE_CHECKING
 
-from sqlalchemy.dialects.postgresql import JSONB
-from sqlmodel import Column, Field, SQLModel
+from pydantic import EmailStr
+from sqlmodel import Field, Relationship
+
+from .abstract import AbstractActive
+
+if TYPE_CHECKING:
+    from .testimonial import Testimonial
 
 
-class User(SQLModel, table=True):
-    __tablename__ = "users"
+class Roles(StrEnum):
+    ADMIN = "admin"
+    MODERATOR = "moderator"
+    USER = "user"
 
-    id: uuid.UUID = Field(default_factory=uuid.uuid4, primary_key=True, index=True)
 
-    email: str = Field(nullable=False, unique=True, max_length=255)
-    name: str | None = Field(default=None, max_length=255)
-    surname: str | None = Field(default=None, max_length=255)
+class User(AbstractActive, table=True):
+    email: EmailStr = Field(index=True, nullable=False, unique=True)
+    name: str | None = None
+    surname: str | None = None
+    password: str
+    roles: Roles = Field(default=Roles.USER)
 
-    is_active: bool = Field(default=True)
-
-    roles: dict | None = Field(default=None, sa_column=Column(JSONB))
-
-    hashed_password: str = Field(nullable=False, max_length=255)
-
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    # relationships
+    testimonials: list["Testimonial"] = Relationship(back_populates="author")

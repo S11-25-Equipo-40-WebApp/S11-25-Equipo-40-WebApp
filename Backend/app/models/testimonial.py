@@ -1,32 +1,41 @@
-from datetime import datetime
-from typing import Optional
+from enum import StrEnum
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field, Relationship, SQLModel
+from sqlmodel import Field, Relationship
 
-from app.models.user import User
+from .abstract import AbstractActive
+from .testimonial_tag_link import TestimonialTagLink
+
+if TYPE_CHECKING:
+    from .category import Category
+    from .tag import Tag
+    from .user import User
 
 
-class Testimonial(SQLModel, table=True):
-    __tablename__ = "testimonials"
+class MediaType(StrEnum):
+    IMAGE = "image"
+    VIDEO = "video"
+    TEXT = "text"
 
-    id: UUID = Field(default=None, primary_key=True)
 
-    title: str = Field(nullable=False, max_length=200)
-    content: str = Field(nullable=False)
+class StatusType(StrEnum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
 
-    media_type: str = Field(nullable=False, max_length=10)
-    media_url: str | None = Field(default=None, max_length=500)
 
-    status: str = Field(nullable=False, max_length=10)
-
+class Testimonial(AbstractActive, table=True):
+    title: str
+    content: str
+    media_type: MediaType = Field(default=MediaType.TEXT)
+    media_url: str | None = None
+    status: StatusType = Field(default=StatusType.PENDING)
     views_count: int = Field(default=0)
+    author_id: UUID = Field(foreign_key="user.id")
+    category_id: UUID | None = Field(default=None, foreign_key="category.id")
 
-    author_id: UUID = Field(foreign_key="users.id")
-    category_id: UUID | None = Field(default=None, foreign_key="categories.id")
-
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
-    deleted_at: datetime | None = None
-
-    author: Optional["User"] = Relationship(back_populates="testimonials")
+    # Relationships
+    author: "User" = Relationship(back_populates="testimonials")
+    category: Optional["Category"] = Relationship(back_populates="testimonials")
+    tags: list["Tag"] = Relationship(back_populates="testimonials", link_model=TestimonialTagLink)

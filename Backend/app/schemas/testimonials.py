@@ -1,40 +1,57 @@
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import model_validator
+from sqlmodel import Field, SQLModel
+
+from app.models.testimonial import MediaType
 
 
-class TestimonialCreate(BaseModel):
-    title: str
-    content: str
-    media_type: str
+class TestimonialCreate(SQLModel):
+    title: str = Field(min_length=5, max_length=200)
+    content: str = Field(min_length=10, max_length=1000)
+    media_type: MediaType = Field(default=MediaType.TEXT)
     media_url: str | None = None
-    status: str
-    category_id: UUID | None = None
+    tags: list[str] = []
+
+    @model_validator(mode="after")
+    def validate_media(cls, values):
+        if values.media_type == MediaType.TEXT:
+            values.media_url = None
+        else:
+            if not values.media_url:
+                raise ValueError("media_url es obligatorio.")
+        return values
+
+    model_config = {"from_attributes": True}
 
 
-class TestimonialUpdate(BaseModel):
-    title: str | None = None
-    content: str | None = None
-    media_type: str | None = None
-    media_url: str | None = None
-    status: str | None = None
-    category_id: UUID | None = None
+class TestimonialAuthor(SQLModel):
+    name: str
+    surname: str
+
+    model_config = {"from_attributes": True}
 
 
-class TestimonialResponse(BaseModel):
+class TestimonialResponse(SQLModel):
     id: UUID
     title: str
     content: str
-    media_type: str
-    media_url: str | None = None
-    status: str
-    views_count: int
-    author_id: UUID
-    category_id: UUID | None = None
+    media_type: MediaType
+    media_url: str | None
     created_at: datetime
     updated_at: datetime
-    deleted_at: datetime | None = None
+    views_count: int
+    author: TestimonialAuthor
 
-    class Config:
-        orm_mode = True
+    # ⬅️ IMPORTANTE
+    model_config = {"from_attributes": True}
+
+
+class TestimonialUpdate(SQLModel):
+    title: str | None = Field(default=None, min_length=5, max_length=200)
+    content: str | None = Field(default=None, min_length=10, max_length=1000)
+    media_type: MediaType | None = None
+    media_url: str | None = None
+
+    model_config = {"from_attributes": True}

@@ -1,24 +1,25 @@
+from fastapi import HTTPException
 from sqlalchemy import select
-from sqlalchemy.orm import Session
 
 from app.core.jwt import create_access_token
 from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.schemas.auth import UserRegister
+from app.schemas.auth import UserCreate, UserLogin
 
 
 class AuthService:
     @staticmethod
-    async def register_user(db, data: UserRegister):
+    async def register_user(db, data: UserCreate):
         stmt = select(User).where(User.email == data.email)
         result = await db.execute(stmt)
         existing = result.scalar_one_or_none()
-        password = hash_password(data.password)
 
         if existing:
             raise ValueError("El correo ya está registrado")
+        hashed = hash_password(data.password)
         user = User(
-            email=data.email, name=data.name, surname=data.surname, hashed_password=password
+            email=data.email,
+            password=hashed,
         )
 
         db.add(user)
@@ -28,19 +29,38 @@ class AuthService:
         return user
 
     @staticmethod
-    async def login_user(db: Session, email: str, password: str):
-        result = await db.execute(select(User).where(User.email == email))
+    async def login_user(db, data: UserLogin):
+        stmt = select(User).where(User.email == data.email)
+        result = await db.execute(stmt)
         user = result.scalar_one_or_none()
-        if not user or not verify_password(password, user.hashed_password):
+        if not user or not verify_password(data.password, user.password):
             raise ValueError("Invalid credentials")
 
         token = create_access_token({"sub": str(user.id), "roles": user.roles})
         return token
 
     @staticmethod
-    async def get_user(db: Session, email: str):
+    async def get_user(db, email: str):
         result = await db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
         if not user:
             raise ValueError("User not found")
+        return user
+
+    @staticmethod
+    async def update_user(db, email: str, data):
+        stmt = select(User).where(User.email == email)
+        result = await db.execute(stmt)
+        user = result.scalar_one_or_none()
+
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+
+        for key, value in data.model_dump(exclude_unset=True).items():
+            setattr(user, key, value)
+
+        db.add(user)
+        await db.commit()
+        await db.refresh(user)
+
         return user

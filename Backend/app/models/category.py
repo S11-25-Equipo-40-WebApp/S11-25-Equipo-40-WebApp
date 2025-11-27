@@ -1,15 +1,16 @@
-from datetime import datetime
-from uuid import UUID, uuid4
+from typing import TYPE_CHECKING
 
-from sqlmodel import Field, SQLModel
+from sqlmodel import Field, Relationship
+
+from .abstract import Abstract
+
+if TYPE_CHECKING:
+    from .testimonial import Testimonial
 
 
-class Category(SQLModel, table=True):
-    __tablename__ = "categories"
+class Category(Abstract, table=True):
+    name: str = Field(index=True)
+    slug: str = Field(index=True, unique=True)
 
-    id: UUID = Field(default_factory=uuid4, primary_key=True)
-    name: str = Field(nullable=False, max_length=255)
-    slug: str = Field(nullable=False, max_length=255, unique=True)
-
-    created_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
-    updated_at: datetime = Field(default_factory=datetime.utcnow, nullable=False)
+    # relationships
+    testimonials: list["Testimonial"] = Relationship(back_populates="category")

@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter, Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -22,21 +24,19 @@ async def create_testimonial(
 
 @router.get("/", response_model=list[TestimonialResponse])
 async def list_testimonials(
-    current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     service = TestimonialsService(session)
-    return await service.list(current_user.id)
+    return await service.list_all(session)
 
 
 @router.get("/{id}", response_model=TestimonialResponse)
 async def get_testimonial(
-    id: int,
-    current_user: User = Depends(get_current_user),
+    id: UUID,
     session: AsyncSession = Depends(get_session),
 ):
     service = TestimonialsService(session)
-    return await service.get(id, current_user.id)
+    return await service.get(session, id)
 
 
 @router.put("/{id}", response_model=TestimonialResponse)
@@ -52,9 +52,9 @@ async def update_testimonial(
 
 @router.delete("/{id}")
 async def delete_testimonial(
-    id: int,
+    id: UUID,
     current_user: User = Depends(get_current_user),
     session: AsyncSession = Depends(get_session),
 ):
     service = TestimonialsService(session)
-    return await service.delete(id, current_user.id)
+    return await service.delete(session, id, current_user.id, current_user.roles)

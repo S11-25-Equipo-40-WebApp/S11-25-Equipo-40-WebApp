@@ -1,32 +1,49 @@
 from datetime import datetime
-from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr
+from pydantic import EmailStr, field_validator
+from sqlmodel import Field, SQLModel
+
+from app.models.user import Roles
 
 
-class UserRegister(BaseModel):
+class UserCreate(SQLModel):
     email: EmailStr
-    password: str
-    name: str
-    surname: str | None = None
-    roles: list[str] | None = None
+    password: str = Field(
+        min_length=8,
+        max_length=128,
+    )
+
+    @field_validator("password")
+    def validate_password(cls, v: str):
+        if not any(c.islower() for c in v):
+            raise ValueError("La contraseña debe incluir al menos una letra minúscula.")
+
+        if not any(c.isupper() for c in v):
+            raise ValueError("La contraseña debe incluir al menos una letra mayúscula.")
+
+        if not any(c.isdigit() for c in v):
+            raise ValueError("La contraseña debe incluir al menos un número.")
+
+        special = "!@#$%^&*()_+-=[]{};':\"\\|,.<>/?"
+        if not any(c in special for c in v):
+            raise ValueError(f"La contraseña debe incluir al menos un carácter especial: {special}")
+
+        return v
 
 
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
+class UserLogin(UserCreate):
+    pass
 
 
-class UserResponse(BaseModel):
+class UserUpdate(SQLModel):
+    name: str | None = Field(min_length=2, max_length=50)
+    surname: str | None = Field(min_length=2, max_length=50)
+    email: EmailStr | None = None
+    role: Roles | None = None
+
+
+class UserResponse(UserUpdate):
     id: UUID
-    email: EmailStr
-    name: str | None = None
-    surname: str | None = None
-    is_active: bool
-    roles: Any | None = None
     created_at: datetime
     updated_at: datetime
-
-    class Config:
-        orm_mode = True
