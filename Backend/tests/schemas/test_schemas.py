@@ -11,8 +11,8 @@ def test_categorycreate_generates_slug():
 
 
 def test_tagcreate_generates_slug():
-    cat = TagCreate(name=" --Nuevo Tag.")
-    assert cat.slug == generate_slug(" --Nuevo Tag.")
+    tag = TagCreate(name=" --Nuevo Tag.")
+    assert tag.slug == generate_slug(" --Nuevo Tag.")
 
 
 def test_testimonial_create():
