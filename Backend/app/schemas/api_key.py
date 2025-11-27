@@ -1,8 +1,10 @@
+from datetime import datetime
+
 from sqlmodel import Field, SQLModel
 
 
 class APIKeyCreate(SQLModel):
-    name: str | None = Field(default=None, max_length=50)
+    name: str | None = Field(default="Secret Key", max_length=50)
 
 
 class APIKeyResponse(APIKeyCreate):
@@ -11,3 +13,10 @@ class APIKeyResponse(APIKeyCreate):
 
 class APIKeyUpdate(APIKeyCreate):
     pass
+
+
+class APIKeyListResponse(SQLModel):
+    name: str | None
+    prefix: str
+    revoked: bool
+    created_at: datetime
