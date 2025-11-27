@@ -24,4 +24,4 @@ def generate_slug(text: str) -> str:
     text = text.strip("-")
     # Replace multiple hyphens with a single hyphen
     text = re.sub(r"-+", "-", text)
-    return text.strip().strip("-")
+    return text
