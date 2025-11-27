@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.core.db import get_session
-from app.schemas.auth import UserCreate, UserLogin, UserResponse, UserUpdate
+from app.schemas.user import UserCreate, UserLogin, UserResponse, UserUpdate
 from app.services.AuthService import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])

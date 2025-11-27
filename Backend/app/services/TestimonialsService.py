@@ -5,7 +5,7 @@ from app.models.tag import Tag
 from app.models.testimonial import Testimonial
 from app.models.testimonial_tag_link import TestimonialTagLink
 from app.models.user import User
-from app.schemas.testimonials import TestimonialCreate, TestimonialUpdate
+from app.schemas.testimonial import TestimonialCreate, TestimonialUpdate
 
 
 class TestimonialsService:
@@ -15,33 +15,49 @@ class TestimonialsService:
     async def create(self, testimonial_data: TestimonialCreate, user_id: str):
         db = self.session
 
-        user = await db.get(User, user_id)
+        user = db.get(User, user_id)
         if not user:
             return None
 
+        youtube_url = (
+            str(testimonial_data.media.youtube_url)
+            if testimonial_data.media and testimonial_data.media.youtube_url
+            else None
+        )
+
+        image_urls = (
+            [str(url) for url in testimonial_data.media.image_urls]
+            if testimonial_data.media and testimonial_data.media.image_urls
+            else []
+        )
+
         testimonial = Testimonial(
-            title=testimonial_data.title,
-            content=testimonial_data.content,
-            media_type=testimonial_data.media_type,
-            media_url=testimonial_data.media_url,
+            product_id=testimonial_data.product.id,
+            product_name=testimonial_data.product.name,
+            title=testimonial_data.content.title if testimonial_data.content else None,
+            content=testimonial_data.content.content if testimonial_data.content else None,
+            rating=testimonial_data.content.rating if testimonial_data.content else None,
+            author_name=testimonial_data.content.author_name if testimonial_data.content else None,
+            youtube_url=youtube_url,
+            image_urls=image_urls,
             author_id=user_id,
         )
 
         db.add(testimonial)
-        await db.commit()
-        await db.refresh(testimonial)
+        db.commit()
+        db.refresh(testimonial)
 
         tag_objects = []
 
         for tag_name in testimonial_data.tags:
-            result = await db.execute(select(Tag).where(Tag.name == tag_name))
+            result = db.execute(select(Tag).where(Tag.name == tag_name))
             tag = result.scalar_one_or_none()
 
             if not tag:
                 tag = Tag(name=tag_name, slug=tag_name.lower().replace(" ", "-"))
                 db.add(tag)
-                await db.commit()
-                await db.refresh(tag)
+                db.commit()
+                db.refresh(tag)
 
             tag_objects.append(tag)
 
@@ -49,8 +65,8 @@ class TestimonialsService:
             link = TestimonialTagLink(testimonial_id=testimonial.id, tag_id=tag.id)
             db.add(link)
 
-        await db.commit()
-        await db.refresh(testimonial)
+        db.commit()
+        db.refresh(testimonial)
 
         return testimonial
 
@@ -60,12 +76,12 @@ class TestimonialsService:
             selectinload(Testimonial.author), selectinload(Testimonial.tags)
         )
 
-        result = await db.execute(query)
+        result = db.execute(query)
         return result.scalars().all()
 
     @staticmethod
     async def update(db, testimonial_data: TestimonialUpdate, user_id: str):
-        result = await db.execute(select(Testimonial).where(Testimonial.id == testimonial_data.id))
+        result = db.execute(select(Testimonial).where(Testimonial.id == testimonial_data.id))
         testimonial = result.scalar_one_or_none()
         if not testimonial:
             return None
@@ -95,8 +111,8 @@ class TestimonialsService:
             link = TestimonialTagLink(testimonial_id=testimonial.id, tag_id=tag.id)
             db.add(link)
 
-        await db.commit()
-        await db.refresh(testimonial)
+        db.commit()
+        db.refresh(testimonial)
 
         return testimonial
 
@@ -107,7 +123,7 @@ class TestimonialsService:
             .where(Testimonial.id == id)
             .options(selectinload(Testimonial.author), selectinload(Testimonial.tags))
         )
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         testimonial = result.scalar_one_or_none()
         if not testimonial:
             return None
@@ -115,23 +131,25 @@ class TestimonialsService:
         return testimonial
 
     @staticmethod
-    async def delete(db, id, user_id: str, user_role: str):
+    async def delete(db, id, user_name: str, user_role: str):
         stmt = (
             select(Testimonial)
             .where(Testimonial.id == id)
             .options(selectinload(Testimonial.author), selectinload(Testimonial.tags))
         )
-        result = await db.execute(stmt)
+        result = db.execute(stmt)
         if not result:
             return None
         testimonial = result.scalar_one_or_none()
         if not testimonial:
-            return None
-        if testimonial.author_id != user_id:
+            return "forbidden"
+        print(testimonial.author_name)
+        print(user_name)
+        if testimonial.author_name != user_name:
             """ or user_role != "ADMIN" """
-            return None
+            return "no user"
 
-        await db.delete(testimonial)
-        await db.commit()
+        db.delete(testimonial)
+        db.commit()
 
-        return testimonial
+        return "deleted"

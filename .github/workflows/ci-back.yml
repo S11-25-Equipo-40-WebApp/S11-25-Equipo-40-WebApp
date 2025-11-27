@@ -76,6 +76,13 @@ jobs:
         run: uv sync
 
       - name: Run tests
+        env:
+          POSTGRES_SERVER: localhost
+          POSTGRES_PORT: 5432
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: test_db
+          ENVIRONMENT: testing
         run: uv run pytest -v --tb=short
 
   # Job 3: Status check

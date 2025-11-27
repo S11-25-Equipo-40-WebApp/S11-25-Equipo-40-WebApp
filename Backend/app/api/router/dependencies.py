@@ -1,6 +1,6 @@
-import jwt
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
+from jose import jwt
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
@@ -34,7 +34,7 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token inválido.",
         ) from None
-    user = await session.get(User, user_id)
+    user = session.get(User, user_id)
 
     if not user:
         raise HTTPException(

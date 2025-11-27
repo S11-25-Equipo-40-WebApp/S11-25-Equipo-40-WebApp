@@ -20,8 +20,8 @@ class User(AbstractActive, table=True):
     email: EmailStr = Field(index=True, nullable=False, unique=True)
     name: str | None = None
     surname: str | None = None
-    password: str
-    roles: Roles = Field(default=Roles.USER)
+    hashed_password: str
+    role: Roles = Field(default=Roles.USER)
 
     # relationships
     testimonials: list["Testimonial"] = Relationship(back_populates="author")

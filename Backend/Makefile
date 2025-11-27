@@ -2,7 +2,7 @@
 # - clean: remove temporary/build files and caches
 # - migrate: run alembic migrations (uses 'uv' if available)
 
-.PHONY: help clean clean-pyc clean-all migrate lint
+.PHONY: help clean clean-pyc clean-all migrate create-tables lint
 
 SHELL := /bin/bash
 
@@ -14,6 +14,7 @@ help:
 	@echo "  clean-pyc    Remove only python cache files (__pycache__, *.pyc)"
 	@echo "  clean-all    Remove everything from clean + .venv (only if CLEAN_VENV=true)"
 	@echo "  migrate      Run alembic migrations (uses 'uv' if available; falls back to 'alembic')"
+	@echo "  create-tables    Create new migration (interactive - prompts for message)"
 	@echo "  lint         - Run linter with auto-fix + format code"
 
 
@@ -39,8 +40,12 @@ clean-all: clean
 	fi
 
 migrate:
-	@echo "Running migrations using: $(MIGRATE)"
-	@$(MIGRATE) upgrade head
+	@echo "Running migrations in Docker container..."
+	@docker compose exec app alembic upgrade head
+
+create-tables:
+	@read -p "Migration message: " msg; \
+	docker compose exec app alembic revision --autogenerate -m "$$msg"
 
 # Linting and formatting commands
 lint:

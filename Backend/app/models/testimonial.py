@@ -2,6 +2,8 @@ from enum import StrEnum
 from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
+from sqlalchemy import Column
+from sqlalchemy.dialects.postgresql import JSON
 from sqlmodel import Field, Relationship
 
 from .abstract import AbstractActive
@@ -26,14 +28,19 @@ class StatusType(StrEnum):
 
 
 class Testimonial(AbstractActive, table=True):
-    title: str
-    content: str
-    media_type: MediaType = Field(default=MediaType.TEXT)
-    media_url: str | None = None
+    product_id: str
+    product_name: str
+    title: str | None = None
+    content: str | None = None
+    youtube_url: str | None = None
+    image_url: list[str] | None = Field(default_factory=list, sa_column=Column(JSON))
     status: StatusType = Field(default=StatusType.PENDING)
-    views_count: int = Field(default=0)
-    author_id: UUID = Field(foreign_key="user.id")
-    category_id: UUID | None = Field(default=None, foreign_key="category.id")
+    rating: int | None = None
+    author_name: str | None = None
+
+    # Foreign Keys
+    user_id: UUID | None = Field(default=None, foreign_key="user.id", ondelete="SET NULL")
+    category_id: UUID | None = Field(default=None, foreign_key="category.id", ondelete="SET NULL")
 
     # Relationships
     author: "User" = Relationship(back_populates="testimonials")
