@@ -41,7 +41,6 @@ class Testimonial(AbstractActive, table=True):
     # Foreign Keys
     user_id: UUID | None = Field(default=None, foreign_key="user.id", ondelete="SET NULL")
     category_id: UUID | None = Field(default=None, foreign_key="category.id", ondelete="SET NULL")
-    tag_id: UUID | None = Field(default=None, foreign_key="tag.id", ondelete="SET NULL")
 
     # Relationships
     author: "User" = Relationship(back_populates="testimonials")
