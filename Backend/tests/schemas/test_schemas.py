@@ -1,7 +1,6 @@
 import pytest
 from pydantic import ValidationError
 
-from app.models.testimonial import MediaType
 from app.schemas import CategoryCreate, TagCreate, TestimonialCreate, UserCreate
 from app.utils.validators.slug import generate_slug
 
@@ -16,23 +15,13 @@ def test_tagcreate_generates_slug():
     assert cat.slug == generate_slug(" --Nuevo Tag.")
 
 
-def test_testimonial_create_text_clears_media_url():
+def test_testimonial_create():
     t = TestimonialCreate(
-        title="Titulo valido",
-        content="Contenido suficientemente largo",
-        media_type=MediaType.TEXT,
-        media_url="http://example.com/video.mp4",
+        product={"id": "123", "name": "Producto de prueba"},
+        content={"title": "Titulo valido", "content": "Contenido suficientemente largo"},
     )
-    assert t.media_url is None
-
-
-def test_testimonial_create_nontext_requires_media_url():
-    with pytest.raises(ValidationError):
-        TestimonialCreate(
-            title="Titulo valido",
-            content="Contenido suficientemente largo",
-            media_type=MediaType.VIDEO,
-        )
+    assert t.product.id == "123"
+    assert t.content.content == "Contenido suficientemente largo"
 
 
 def test_usercreate_password_less_8_characters():
