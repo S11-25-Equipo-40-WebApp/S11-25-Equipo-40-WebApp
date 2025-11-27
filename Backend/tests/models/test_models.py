@@ -9,7 +9,7 @@ def test_testimonial_author_relationship_and_m2m():
 
     with Session(engine) as session:
         # create user and category
-        user = User(name="usuario", email="u@example.com", password="pw")
+        user = User(name="usuario", email="u@example.com", hashed_password="pw")
         category = Category(name="cat", slug="cat")
         session.add_all([user, category])
         session.commit()
