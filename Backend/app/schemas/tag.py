@@ -27,8 +27,13 @@ class TagResponse(TagCreate):
     updated_at: datetime
 
 
-class TagUpdate(TagCreate):
-    name: str = Field(min_length=1, max_length=100, description="The updated name of the tag")
+class TagUpdate(SQLModel):
+    name: str | None = Field(
+        default=None,
+        min_length=1,
+        max_length=100,
+        description="The updated name of the tag",
+    )
     slug: str | None = Field(
         default=None,
         exclude=True,
