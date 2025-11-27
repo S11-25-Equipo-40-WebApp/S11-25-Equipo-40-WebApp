@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
 from sqlalchemy import Column
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSON
 from sqlmodel import Field, Relationship
 
 from .abstract import AbstractActive
@@ -33,7 +33,7 @@ class Testimonial(AbstractActive, table=True):
     title: str | None = None
     content: str | None = None
     youtube_url: str | None = None
-    image_url: list[str] | None = Field(default_factory=list, sa_column=Column(JSONB))
+    image_url: list[str] | None = Field(default_factory=list, sa_column=Column(JSON))
     status: StatusType = Field(default=StatusType.PENDING)
     rating: int | None = None
     author_name: str | None = None
