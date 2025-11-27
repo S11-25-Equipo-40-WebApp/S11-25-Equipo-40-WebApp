@@ -26,7 +26,7 @@ class TestimonialMedia(SQLModel):
     def validate_youtube(cls, v):
         if v is None:
             return v
-        domain = urlparse(v).netloc
+        domain = urlparse(str(v)).netloc
         if not ("youtube.com" in domain or "youtu.be" in domain):
             raise ValueError("La URL debe ser de YouTube")
         return v
