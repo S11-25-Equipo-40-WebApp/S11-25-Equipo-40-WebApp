@@ -90,6 +90,13 @@ Deberías ver la documentación interactiva y los endpoints listados.
 uv run ruff format .
 uv run ruff check --fix .
 
+# Opción Makefile
+# Ejecuta el objetivo `lint` definido en `Backend/Makefile` (formatea y aplica fixes):
+# Desde el directorio del backend:
+make lint
+# Desde la raíz del repositorio:
+make -C Backend lint
+
 # Tests
 uv run pytest
 uv run pytest --cov=app
@@ -112,8 +119,8 @@ uv add --dev paquete
 Ver documentación detallada en la raíz del proyecto:
 
 - **[README.md](../README.md)** - Documentación principal del proyecto
-- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Arquitectura y patrones de diseño
-- **[GIT_WORKFLOW.md](GIT_WORKFLOW.md)** - Convenciones de Git y commits
+- **[ARCHITECTURE.md](./docs/ARCHITECTURE.md)** - Arquitectura y patrones de diseño
+- **[GIT_WORKFLOW.md](./docs/GIT_WORKFLOW.md)** - Convenciones de Git y commits
 
 ## 🏗️ Estructura del Backend
 

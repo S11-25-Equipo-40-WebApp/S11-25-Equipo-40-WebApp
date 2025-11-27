@@ -2,7 +2,7 @@
 # - clean: remove temporary/build files and caches
 # - migrate: run alembic migrations (uses 'uv' if available)
 
-.PHONY: help clean clean-pyc clean-all migrate
+.PHONY: help clean clean-pyc clean-all migrate lint
 
 SHELL := /bin/bash
 
@@ -14,6 +14,8 @@ help:
 	@echo "  clean-pyc    Remove only python cache files (__pycache__, *.pyc)"
 	@echo "  clean-all    Remove everything from clean + .venv (only if CLEAN_VENV=true)"
 	@echo "  migrate      Run alembic migrations (uses 'uv' if available; falls back to 'alembic')"
+	@echo "  lint         - Run linter with auto-fix + format code"
+
 
 # detect migration command: prefer 'uv' if on path
 MIGRATE := $(shell if command -v uv >/dev/null 2>&1; then echo "uv run alembic"; else echo "alembic"; fi)
@@ -39,3 +41,10 @@ clean-all: clean
 migrate:
 	@echo "Running migrations using: $(MIGRATE)"
 	@$(MIGRATE) upgrade head
+
+# Linting and formatting commands
+lint:
+	@echo "✨ Formatting code..."
+	ruff format .
+	@echo "🔍 Running linter with auto-fix..."
+	ruff check . --fix

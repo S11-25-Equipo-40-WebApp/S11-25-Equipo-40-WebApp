@@ -1,7 +1,7 @@
 import secrets
 from typing import Annotated, Any
 
-from pydantic import AnyUrl, BeforeValidator
+from pydantic import AnyUrl, BeforeValidator, PostgresDsn, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -27,25 +27,30 @@ class Settings(BaseSettings):
         """
         Token expiration time based on environment:
         - development: 8 days (for easier testing)
-        - production: 5 minutes (for security)
+        - production: 60 minutes (for security)
         """
         if self.ENVIRONMENT == "production":
             return 60  # 60 minutes in production
         return 60 * 24 * 8  # 8 days in development
 
     # postgres
+    POSTGRES_SERVER: str
+    POSTGRES_PORT: int = 5432
     POSTGRES_USER: str
     POSTGRES_PASSWORD: str
-    POSTGRES_URL: str
+    POSTGRES_DB: str
 
+    @computed_field  # type: ignore[prop-decorator]
     @property
-    def async_database_url(self):
-        url = self.POSTGRES_URL
-        if url.startswith("postgres://"):
-            url = url.replace("postgres://", "postgresql+asyncpg://", 1)
-        elif url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return url
+    def DATABASE_URI(self) -> PostgresDsn:
+        return PostgresDsn.build(
+            scheme="postgresql+psycopg",
+            username=self.POSTGRES_USER,
+            password=self.POSTGRES_PASSWORD,
+            host=self.POSTGRES_SERVER,
+            port=self.POSTGRES_PORT,
+            path=self.POSTGRES_DB,
+        )
 
     BACKEND_CORS_ORIGINS: Annotated[list[AnyUrl] | str, BeforeValidator(parse_cors)] = []
 

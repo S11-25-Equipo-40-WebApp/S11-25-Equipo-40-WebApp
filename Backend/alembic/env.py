@@ -1,30 +1,23 @@
 import asyncio
-import os
 from logging.config import fileConfig
 
-from dotenv import load_dotenv
 from sqlalchemy import pool
 from sqlalchemy.ext.asyncio import create_async_engine
 from sqlmodel import SQLModel
 
 from alembic import context
+from app.core.config import settings
 
 # ! Aqui se agregan los modelos que se desean tener encuenta para hacer las migraciones
 
-load_dotenv()
+
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
 
-# Interpret the config file for Python logging.
-# This line sets up loggers basically.
-db_url = os.getenv("POSTGRES_URL")
-if db_url:
-    # Convert postgresql:// to postgresql+asyncpg:// for asyncpg driver
-    if db_url.startswith("postgresql://"):
-        db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-    config.set_main_option("sqlalchemy.url", db_url)
+
+config.set_main_option("sqlalchemy.url", str(settings.DATABASE_URI))
 
 # Configura el logging
 fileConfig(config.config_file_name)
@@ -57,6 +50,7 @@ def run_migrations_offline() -> None:
         url=url,
         target_metadata=target_metadata,
         literal_binds=True,
+        compare_type=True,
         dialect_opts={"paramstyle": "named"},
     )
 

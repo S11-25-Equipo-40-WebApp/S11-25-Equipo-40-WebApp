@@ -9,7 +9,7 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from app.core.config import settings
 
 engine = create_async_engine(
-    settings.async_database_url,
+    str(settings.DATABASE_URI),
     # !imprime logs de querys
     echo=settings.ENVIRONMENT == "development",
     future=True,
