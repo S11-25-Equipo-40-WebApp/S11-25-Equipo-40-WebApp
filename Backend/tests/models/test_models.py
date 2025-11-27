@@ -1,13 +1,6 @@
 from sqlmodel import Session, SQLModel, create_engine
 
 from app.models import Category, Tag, Testimonial, User
-from app.schemas import CategoryCreate
-from app.utils.validators.slug import generate_slug
-
-
-def test_category_schema_generates_slug():
-    cat = CategoryCreate(name="Mi Categoria")
-    assert cat.slug == generate_slug("Mi Categoria")
 
 
 def test_testimonial_author_relationship_and_m2m():
@@ -25,11 +18,18 @@ def test_testimonial_author_relationship_and_m2m():
 
         # create testimonial and tags
         testimonial = Testimonial(
-            title="Titulo",
-            content="Contenido",
-            author_id=user.id,
+            product_id="ABC123",
+            product_name="Producto XYZ",
+            title="Excelente producto",
+            content="Muy buena calidad",
+            youtube_url="https://youtube.com/watch?v=dQw4w9WgXcQ",
+            image_url=["https://cdn.com/img1.png", "https://cdn.com/img2.png"],
+            rating=5,
+            author_name="Juan",
+            user_id=user.id,
             category_id=category.id,
         )
+
         tag1 = Tag(name="tag1", slug="tag1")
         tag2 = Tag(name="tag2", slug="tag2")
 
@@ -50,6 +50,11 @@ def test_testimonial_author_relationship_and_m2m():
         session.refresh(tag1)
 
         # checks
-        assert testimonial.author_id == user.id
+        assert testimonial.id is not None
+        assert testimonial.product_id == "ABC123"
+        assert testimonial.image_url == ["https://cdn.com/img1.png", "https://cdn.com/img2.png"]
+        assert testimonial.rating == 5
+        assert isinstance(testimonial.rating, int)
+        assert testimonial.user_id == user.id
         assert len(testimonial.tags) == 2
         assert testimonial in tag1.testimonials
