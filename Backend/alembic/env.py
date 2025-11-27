@@ -5,7 +5,7 @@ from app.core.config import settings
 from sqlmodel import SQLModel
 
 # Import all models here so Alembic can detect them
-from app.models import User, Category, Tag, Testimonial, TestimonialTagLink  # noqa: F401
+from app.models import User, Category, Tag, Testimonial, TestimonialTagLink, APIKey  # noqa: F401
 
 
 config = context.config
