@@ -1,8 +1,11 @@
+from datetime import timedelta
+
 from sqlmodel import Session, select
 
-from app.core.security import hash_password
+from app.core.jwt import create_access_token
+from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate
+from app.schemas.user import UserCreate, UserLogin
 
 
 class AuthService:
@@ -23,3 +26,16 @@ class AuthService:
         db.commit()
         db.refresh(user)
         return user
+
+    @staticmethod
+    def login_user(db: Session, data: UserLogin):
+        stmt = select(User).where(User.email == data.email)
+        result = db.exec(stmt)
+        user = result.one_or_none()
+        if not user or not verify_password(data.password, user.hashed_password):
+            raise ValueError("Invalid credentials")
+
+        token = create_access_token(
+            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(minutes=30)
+        )
+        return token

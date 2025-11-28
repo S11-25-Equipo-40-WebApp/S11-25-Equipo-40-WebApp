@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel
@@ -43,6 +44,6 @@ class UserUpdate(SQLModel):
 
 
 class UserResponse(UserUpdate):
-    id: str
+    id: UUID
     created_at: datetime
     updated_at: datetime
