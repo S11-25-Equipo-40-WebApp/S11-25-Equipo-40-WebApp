@@ -18,6 +18,6 @@ repos:
     hooks:
       - id: gitmoji-check
         name: Check Gitmoji format
-        entry: Backend/.githooks/check-gitmoji.sh
-        language: script
+        entry: bash Backend/.githooks/check-gitmoji.sh
+        language: system
         stages: [commit-msg]
