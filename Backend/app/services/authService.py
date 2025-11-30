@@ -64,3 +64,12 @@ class AuthService:
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return user
+
+    @staticmethod
+    def get_user_by_id(db, id):
+        stmt = select(User).where(User.id == id)
+        result = db.exec(stmt)
+        user = result.one_or_none()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return user
