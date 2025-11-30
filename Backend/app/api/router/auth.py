@@ -33,3 +33,12 @@ async def update(data: UserUpdate, db: Session = Depends(get_session)):
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
+
+
+@router.get("/")
+async def get(db: Session = Depends(get_session)):
+    try:
+        user = AuthService.get_user(db)
+        return user
+    except ValueError as e:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None

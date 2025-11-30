@@ -55,3 +55,12 @@ class AuthService:
         db.commit()
         db.refresh(user)
         return user
+
+    @staticmethod
+    def get_user(db):
+        stmt = select(User)
+        result = db.exec(stmt)
+        user = result.all()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        return user
