@@ -41,3 +41,12 @@ async def get_current_user(
         ) from None
 
     return user
+
+
+def require_admin(current_user: User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=403,
+            detail="No tienes permisos de administrador.",
+        )
+    return current_user

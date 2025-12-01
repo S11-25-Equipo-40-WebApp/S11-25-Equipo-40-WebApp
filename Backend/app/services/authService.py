@@ -43,12 +43,16 @@ class AuthService:
         return token
 
     @staticmethod
-    def update_user(db, data):
+    def update_user(db, data, current_user):
         stmt = select(User).where(User.email == data.email)
         result = db.exec(stmt)
         user = result.one_or_none()
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        if not user.email == current_user.email or not user.role == "admin":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos de administrador."
+            )
         for key, value in data.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
         db.add(user)
