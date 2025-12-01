@@ -52,6 +52,11 @@ async def get(db: Session = Depends(get_session)):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
 
 
+@router.get("/me")
+async def get_me(current_user: User = Depends(get_current_user)):
+    return current_user
+
+
 @router.get("/{id}", dependencies=[Depends(require_admin)])
 async def get_by_id(id: UUID, db: Session = Depends(get_session)):
     try:
@@ -59,8 +64,3 @@ async def get_by_id(id: UUID, db: Session = Depends(get_session)):
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
-
-
-"""@router.get("/me")
-async def get_me(current_user: User = Depends(get_current_user)):
-    return current_user"""
