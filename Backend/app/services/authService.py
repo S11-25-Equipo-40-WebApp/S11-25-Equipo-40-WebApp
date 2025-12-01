@@ -8,6 +8,8 @@ from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin
 
+PROHIBITED_FIELDS = ["role", "id"]
+
 
 class AuthService:
     @staticmethod
@@ -49,10 +51,19 @@ class AuthService:
         user = result.one_or_none()
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        if not user.email == current_user.email or not user.role == "admin":
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos de administrador."
-            )
+        payload = data.model_dump(exclude_unset=True)
+
+        if current_user.role != "admin":
+            if user.id != current_user.id:
+                raise HTTPException(
+                    status_code=403, detail="Solo puedes actualizar tu propio usuario."
+                )
+            for field in PROHIBITED_FIELDS:
+                if field in payload:
+                    raise HTTPException(
+                        status_code=403, detail=f"No puedes modificar el campo '{field}'."
+                    )
+
         for key, value in data.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
         db.add(user)
