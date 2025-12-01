@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException
 from sqlmodel import Session
 
 from app.core.db import get_session
@@ -17,8 +17,8 @@ async def register(data: UserCreate, db: Session = Depends(get_session)):
     try:
         user = AuthService.register_user(db, data)
         return user
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
+    except HTTPException as e:
+        raise e from None
 
 
 @router.post("/login")
@@ -26,8 +26,8 @@ async def login(data: UserLogin, db: Session = Depends(get_session)):
     try:
         token = AuthService.login_user(db, data)
         return {"access_token": token, "token_type": "bearer"}
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e)) from None
+    except HTTPException as e:
+        raise e from None
 
 
 @router.put("/update")
@@ -39,8 +39,8 @@ async def update(
     try:
         user = AuthService.update_user(session, data, current_user)
         return user
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
+    except HTTPException as e:
+        raise e from None
 
 
 @router.get("/", dependencies=[Depends(require_admin)])
@@ -48,8 +48,8 @@ async def get(db: Session = Depends(get_session)):
     try:
         user = AuthService.get_user(db)
         return user
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
+    except HTTPException as e:
+        raise e from None
 
 
 @router.get("/me")
@@ -62,5 +62,5 @@ async def get_by_id(id: UUID, db: Session = Depends(get_session)):
     try:
         user = AuthService.get_user_by_id(db, id)
         return user
-    except ValueError as e:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e)) from None
+    except HTTPException as e:
+        raise e from None

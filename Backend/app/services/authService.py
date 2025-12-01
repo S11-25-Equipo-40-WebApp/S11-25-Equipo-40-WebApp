@@ -18,7 +18,9 @@ class AuthService:
         existing = db.exec(stmt).one_or_none()
 
         if existing:
-            raise ValueError("El correo ya está registrado")
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
+            )
 
         user = User(
             email=data.email,
