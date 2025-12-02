@@ -26,7 +26,6 @@ class AuthService:
             email=data.email,
             hashed_password=hash_password(data.password),
         )
-
         db.add(user)
         db.commit()
         db.refresh(user)
@@ -48,45 +47,20 @@ class AuthService:
 
     @staticmethod
     def update_user(db, data, current_user):
-        stmt = select(User).where(User.email == data.email)
+        stmt = select(User).where(User.email == current_user.email)
         result = db.exec(stmt)
         user = result.one_or_none()
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         payload = data.model_dump(exclude_unset=True)
-
-        if current_user.role != "admin":
-            if user.id != current_user.id:
+        for field in PROHIBITED_FIELDS:
+            if field in payload:
                 raise HTTPException(
-                    status_code=403, detail="Solo puedes actualizar tu propio usuario."
+                    status_code=403, detail=f"No puedes modificar el campo '{field}'."
                 )
-            for field in PROHIBITED_FIELDS:
-                if field in payload:
-                    raise HTTPException(
-                        status_code=403, detail=f"No puedes modificar el campo '{field}'."
-                    )
-
         for key, value in data.model_dump(exclude_unset=True).items():
             setattr(user, key, value)
         db.add(user)
         db.commit()
         db.refresh(user)
-        return user
-
-    @staticmethod
-    def get_user(db):
-        stmt = select(User)
-        result = db.exec(stmt)
-        user = result.all()
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        return user
-
-    @staticmethod
-    def get_user_by_id(db, id):
-        stmt = select(User).where(User.id == id)
-        result = db.exec(stmt)
-        user = result.one_or_none()
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return user
