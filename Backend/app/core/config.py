@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     API: str = "/api"
     PROJECT_NAME: str = "Testify Backend"
     SECRET_KEY: str = secrets.token_urlsafe(32)
+    REFRESH_SECRET_KEY: str = secrets.token_urlsafe(32)
     API_KEY_SECRET: str = secrets.token_urlsafe(48)
     API_KEY_DISPLAY_PREFIX: str = "sk-proj-"
     API_KEY_PREFIX_BODY_CHARS: int = 8
