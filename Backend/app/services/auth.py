@@ -6,7 +6,7 @@ from sqlmodel import Session, select
 from app.core.jwt import create_access_token
 from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin
+from app.schemas.user import UserCreate, UserLogin, UserUpdate
 
 PROHIBITED_FIELDS = ["role", "id"]
 
@@ -46,7 +46,7 @@ class AuthService:
         return token
 
     @staticmethod
-    def update_user(db, data, current_user):
+    def update_user(db: Session, current_user: User, data: UserUpdate):
         stmt = select(User).where(User.email == current_user.email)
         result = db.exec(stmt)
         user = result.one_or_none()
@@ -58,7 +58,7 @@ class AuthService:
                 raise HTTPException(
                     status_code=403, detail=f"No puedes modificar el campo '{field}'."
                 )
-        for key, value in data.model_dump(exclude_unset=True).items():
+        for key, value in payload.items():
             setattr(user, key, value)
         db.add(user)
         db.commit()
