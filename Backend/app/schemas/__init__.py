@@ -19,6 +19,9 @@ from .testimonial import (
     TestimonialResponse,
     TestimonialUpdate,
 )
+from .token import (
+    TokenResponse,
+)
 from .user import (
     UserCreate,
     UserLogin,
@@ -27,6 +30,7 @@ from .user import (
 )
 
 __all__ = [
+    "TokenResponse",
     "APIKeyCreate",
     "APIKeyResponse",
     "APIKeyUpdate",

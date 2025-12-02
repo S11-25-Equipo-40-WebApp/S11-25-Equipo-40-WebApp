@@ -3,7 +3,7 @@ from datetime import timedelta
 from fastapi import HTTPException, status
 from sqlmodel import Session, select
 
-from app.core.jwt import create_access_token
+from app.core.jwt import create_access_token, create_refresh_token
 from app.core.security import hash_password, verify_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserLogin, UserUpdate
@@ -40,10 +40,17 @@ class AuthService:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
-        token = create_access_token(
+        access_token = create_access_token(
             {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(minutes=30)
         )
-        return token
+        refresh_token = create_refresh_token(
+            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(days=30)
+        )
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }
 
     @staticmethod
     def update_user(db: Session, current_user: User, data: UserUpdate):
@@ -64,3 +71,17 @@ class AuthService:
         db.commit()
         db.refresh(user)
         return user
+
+    @staticmethod
+    def create_new_access_token(user: User):
+        access_token = create_access_token(
+            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(minutes=30)
+        )
+        refresh_token = create_refresh_token(
+            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(days=30)
+        )
+        return {
+            "access_token": access_token,
+            "refresh_token": refresh_token,
+            "token_type": "bearer",
+        }

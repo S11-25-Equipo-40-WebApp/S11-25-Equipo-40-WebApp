@@ -13,20 +13,17 @@ router = APIRouter(prefix="/user", tags=["User"], dependencies=[Depends(require_
 
 @router.get("/")
 async def get(db: Session = Depends(get_session)):
-    user = UserService.get_user(db)
-    return user
+    return UserService.get_user(db)
 
 
 @router.get("/{id}")
 async def get_by_id(id: UUID, db: Session = Depends(get_session)):
-    user = UserService.get_user_by_id(db, id)
-    return user
+    return UserService.get_user_by_id(db, id)
 
 
 @router.delete("/delete/{id}")
 async def delete(id: UUID, db: Session = Depends(get_session)):
-    user = UserService.delete_user(db, id)
-    return user
+    return UserService.delete_user(db, id)
 
 
 @router.put("/update")
@@ -34,5 +31,4 @@ async def update(
     data: User,
     session: Session = Depends(get_session),
 ):
-    user = UserService.update_user(session, data)
-    return user
+    return UserService.update_user(session, data)
