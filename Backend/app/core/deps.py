@@ -6,7 +6,7 @@ from sqlmodel import Session
 
 from app.core.config import settings
 from app.core.db import get_session
-from app.models.user import User
+from app.models.user import Roles, User
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
@@ -71,6 +71,6 @@ async def get_refresh_user(
 
 
 def require_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role != "admin":
+    if current_user.role != Roles.ADMIN:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos.")
     return current_user
