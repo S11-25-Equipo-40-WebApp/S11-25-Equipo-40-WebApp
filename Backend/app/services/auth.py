@@ -1,12 +1,13 @@
 from datetime import timedelta
 
 from fastapi import HTTPException, status
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
 from app.core.jwt import create_access_token, create_refresh_token
 from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserLogin, UserUpdate
+from app.schemas.user import UserCreate, UserUpdate
 
 PROHIBITED_FIELDS = ["role", "id"]
 
@@ -32,8 +33,8 @@ class AuthService:
         return user
 
     @staticmethod
-    def login_user(db: Session, data: UserLogin):
-        stmt = select(User).where(User.email == data.email)
+    def login_user(db: Session, data: OAuth2PasswordRequestForm):
+        stmt = select(User).where(User.email == data.username)
         result = db.exec(stmt)
         user = result.one_or_none()
         if not user or not verify_password(data.password, user.hashed_password):
