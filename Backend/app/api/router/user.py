@@ -6,17 +6,18 @@ from sqlmodel import Session
 from app.core.db import get_session
 from app.core.deps import require_admin
 from app.models.user import User
+from app.schemas.user import UserResponse, UserUpdate
 from app.services.user import UserService
 
 router = APIRouter(prefix="/user", tags=["User"], dependencies=[Depends(require_admin)])
 
 
-@router.get("/")
+@router.get("/", response_model=list[UserResponse])
 def get(db: Session = Depends(get_session)):
     return UserService.get_user(db)
 
 
-@router.get("/{id}")
+@router.get("/{id}", response_model=UserResponse)
 def get_by_id(id: UUID, db: Session = Depends(get_session)):
     return UserService.get_user_by_id(db, id)
 
@@ -26,7 +27,7 @@ def delete(id: UUID, db: Session = Depends(get_session)):
     return UserService.delete_user(db, id)
 
 
-@router.put("/update")
+@router.put("/update", response_model=UserUpdate)
 def update(
     data: User,
     session: Session = Depends(get_session),

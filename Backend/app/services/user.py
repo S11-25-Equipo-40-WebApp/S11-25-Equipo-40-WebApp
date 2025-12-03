@@ -1,12 +1,15 @@
+from uuid import uuid4 as UUID
+
 from fastapi import HTTPException, status
-from sqlmodel import select
+from sqlmodel import Session, select
 
 from app.models.user import User
+from app.schemas.user import UserUpdate
 
 
 class UserService:
     @staticmethod
-    def get_user(db):
+    def get_user(db=Session):
         stmt = select(User)
         result = db.exec(stmt)
         user = result.all()
@@ -15,7 +18,7 @@ class UserService:
         return user
 
     @staticmethod
-    def get_user_by_id(db, id):
+    def get_user_by_id(db=Session, id=UUID):
         stmt = select(User).where(User.id == id)
         result = db.exec(stmt)
         user = result.one_or_none()
@@ -24,7 +27,7 @@ class UserService:
         return user
 
     @staticmethod
-    def delete_user(db, id):
+    def delete_user(db=Session, id=UUID):
         stmt = select(User).where(User.id == id)
         result = db.exec(stmt)
         user = result.one_or_none()
@@ -35,7 +38,7 @@ class UserService:
         return user
 
     @staticmethod
-    def update_user(db, data):
+    def update_user(db=Session, data=UserUpdate):
         stmt = select(User).where(User.email == data.email)
         result = db.exec(stmt)
         user = result.one_or_none()
