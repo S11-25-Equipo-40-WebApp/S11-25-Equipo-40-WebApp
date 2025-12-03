@@ -9,7 +9,7 @@ from app.schemas.user import UserUpdate
 
 class UserService:
     @staticmethod
-    def get_user(db=Session):
+    def get_user_list(db=Session):
         stmt = select(User)
         result = db.exec(stmt)
         user = result.all()
@@ -47,4 +47,13 @@ class UserService:
         db.add(user)
         db.commit()
         db.refresh(user)
+        return user
+
+    @staticmethod
+    def get_user_by_email(db=Session, email=str):
+        stmt = select(User).where(User.email == email)
+        result = db.exec(stmt)
+        user = result.one_or_none()
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return user
