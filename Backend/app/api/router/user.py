@@ -13,7 +13,7 @@ router = APIRouter(prefix="/user", tags=["User"], dependencies=[Depends(require_
 
 
 @router.get("/", response_model=list[UserResponse])
-def get(db: Session = Depends(get_session)):
+def get_all_users(db: Session = Depends(get_session)):
     return UserService.get_user(db)
 
 
