@@ -1,11 +1,14 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
+from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session
 
 from app.core.db import get_session
 from app.core.deps import get_current_user, get_refresh_user
 from app.models.user import User
 from app.schemas.token import TokenResponse
-from app.schemas.user import UserCreate, UserLogin, UserResponse, UserUpdate
+from app.schemas.user import UserCreate, UserResponse, UserUpdate
 from app.services.auth import AuthService
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
@@ -18,8 +21,11 @@ def register(data: UserCreate, db: Session = Depends(get_session)):
 
 
 @router.post("/login", response_model=TokenResponse)
-def login(data: UserLogin, db: Session = Depends(get_session)):
-    return AuthService.login_user(db, data)
+def login(
+    form_data: Annotated[OAuth2PasswordRequestForm, Depends()],
+    db: Session = Depends(get_session),
+):
+    return AuthService.login_user(db, form_data)
 
 
 @router.patch("/update", response_model=UserResponse)
