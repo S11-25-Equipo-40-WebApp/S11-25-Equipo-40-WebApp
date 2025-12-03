@@ -8,7 +8,7 @@ from sqlmodel import select
 from app.core.config import settings
 from app.core.db import SessionDep
 from app.models.api_key import APIKey
-from app.schemas import APIKeyListResponse, APIKeyResponse
+from app.schemas import APIKeyResponse
 
 
 def generate_api_key_pair(length: int = 48) -> tuple[str, str, str]:
@@ -50,7 +50,7 @@ def verify_api_key(db: SessionDep, raw_token: str) -> APIKey | None:
         return None
 
     prefix = raw_token[: len(settings.API_KEY_DISPLAY_PREFIX) + settings.API_KEY_PREFIX_BODY_CHARS]
-    statement = select(APIKey).where(APIKey.prefix == prefix, APIKey.revoked.is_(False))
+    statement = select(APIKey).where(APIKey.prefix == prefix, APIKey.revoked.is_(False))  # type: ignore
     result = db.exec(statement).first()
     if not result:
         return None
@@ -62,13 +62,6 @@ def verify_api_key(db: SessionDep, raw_token: str) -> APIKey | None:
     return None
 
 
-def list_api_keys(db: SessionDep) -> list[APIKeyListResponse]:
+def list_api_keys(db: SessionDep) -> list[APIKey]:
     """List all API keys in the database."""
-    results = db.exec(select(APIKey)).all()
-    api_keys = []
-    for key in results:
-        api_key_response = APIKeyListResponse(
-            name=key.name, prefix=key.prefix, revoked=key.revoked, created_at=key.created_at
-        )
-        api_keys.append(api_key_response)
-    return api_keys
+    return db.exec(select(APIKey).order_by(APIKey.created_at.desc())).all()  # type: ignore
