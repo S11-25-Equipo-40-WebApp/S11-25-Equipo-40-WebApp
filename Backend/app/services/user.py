@@ -36,8 +36,8 @@ class UserService:
         return user
 
     @staticmethod
-    def update_user(db=Session, data=UserUpdate):
-        stmt = select(User).where(User.email == data.email)
+    def update_user(db=Session, data=UserUpdate, id=UUID):
+        stmt = select(User).where(User.id == id)
         result = db.exec(stmt)
         user = result.one_or_none()
         if not user:
