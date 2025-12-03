@@ -12,22 +12,22 @@ router = APIRouter(prefix="/user", tags=["User"], dependencies=[Depends(require_
 
 
 @router.get("/")
-async def get(db: Session = Depends(get_session)):
+def get(db: Session = Depends(get_session)):
     return UserService.get_user(db)
 
 
 @router.get("/{id}")
-async def get_by_id(id: UUID, db: Session = Depends(get_session)):
+def get_by_id(id: UUID, db: Session = Depends(get_session)):
     return UserService.get_user_by_id(db, id)
 
 
 @router.delete("/delete/{id}")
-async def delete(id: UUID, db: Session = Depends(get_session)):
+def delete(id: UUID, db: Session = Depends(get_session)):
     return UserService.delete_user(db, id)
 
 
 @router.put("/update")
-async def update(
+def update(
     data: User,
     session: Session = Depends(get_session),
 ):
