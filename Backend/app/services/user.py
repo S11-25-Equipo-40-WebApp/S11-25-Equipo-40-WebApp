@@ -47,7 +47,7 @@ class UserService:
         db.add(user)
         db.commit()
 
-        return HTTPException(
+        raise HTTPException(
             status_code=status.HTTP_204_NO_CONTENT, detail="User soft deleted successfully"
         )
 
@@ -55,7 +55,7 @@ class UserService:
     def update_user(db: SessionDep, user_id: UUID, data):
         user = db.get(User, user_id)
         if not user:
-            raise HTTPException(status_code=404, detail="User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         update_data = data.dict(exclude_unset=True)
 
@@ -75,19 +75,3 @@ class UserService:
         if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
         return user
-
-    # @staticmethod
-    # def update_user_role(
-    #     user_id: UUID,
-    #     new_role: AdminUserUpdate,
-    #     db: SessionDep,
-    # ) -> User:
-    #     user = db.get(User, user_id)
-
-    #     if not user:
-    #         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    #     user.role = new_role.new_role
-    #     db.add(user)
-    #     db.commit()
-    #     db.refresh(user)
-    #     return user
