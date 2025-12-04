@@ -64,4 +64,6 @@ def verify_api_key(db: SessionDep, raw_token: str) -> APIKey | None:
 
 def list_api_keys(db: SessionDep) -> list[APIKey]:
     """List all API keys in the database."""
-    return db.exec(select(APIKey).order_by(APIKey.created_at.desc())).all()  # type: ignore
+    return db.exec(
+        select(APIKey).where(APIKey.revoked.is_(False)).order_by(APIKey.created_at.desc())  # type: ignore
+    ).all()
