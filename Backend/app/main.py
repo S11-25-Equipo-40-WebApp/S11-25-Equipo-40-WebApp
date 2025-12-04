@@ -8,7 +8,7 @@ app = FastAPI(
     version="0.0.1",
 )
 
-app.include_router(api_router)
+app.include_router(api_router, prefix=settings.API)
 
 
 @app.get("/")
