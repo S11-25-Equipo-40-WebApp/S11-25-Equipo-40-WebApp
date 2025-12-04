@@ -132,10 +132,8 @@ class TestSoftDeleteUser:
         mock_user.is_active = True
         mock_db.get.return_value = mock_user
 
-        with pytest.raises(HTTPException) as exc_info:
-            UserService.soft_delete_user(mock_db, user_id)
+        UserService.soft_delete_user(mock_db, user_id)
 
-        assert exc_info.value.status_code == status.HTTP_204_NO_CONTENT
         assert mock_user.is_active is False
         assert mock_db.add.called
         assert mock_db.commit.called
