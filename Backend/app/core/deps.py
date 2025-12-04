@@ -10,7 +10,7 @@ from app.core.config import settings
 from app.core.db import get_session
 from app.models.user import Roles, User
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.API + "/auth/login")
 
 
 async def get_current_user(
