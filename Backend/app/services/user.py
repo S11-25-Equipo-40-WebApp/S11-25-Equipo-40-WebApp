@@ -2,7 +2,7 @@ from uuid import UUID
 
 from fastapi import HTTPException, status
 from pydantic import EmailStr
-from sqlmodel import select
+from sqlmodel import func, select
 
 from app.core.db import SessionDep
 from app.models.user import User
@@ -13,19 +13,21 @@ from app.schemas.user import UserResponse
 class UserService:
     @staticmethod
     def get_users(db: SessionDep, skip: int, limit: int) -> PaginationResponse[UserResponse]:
-        stmt = select(User).offset(skip).limit(limit)
-        result = db.exec(stmt)
-        user = result.all()
+        total_items = db.exec(select(func.count()).select_from(User)).one()
 
-        user_responses = [UserResponse.model_validate(u) for u in user]
+        users = db.exec(select(User).offset(skip).limit(limit)).all()
+
+        user_responses = [UserResponse.model_validate(u) for u in users]
+
+        total_pages = (total_items + limit - 1) // limit
 
         return PaginationResponse(
-            total_items=len(user_responses),
+            total_items=total_items,
             results=user_responses,
             page=skip // limit + 1,
             size=limit,
-            total_pages=(len(user_responses) + limit - 1) // limit,
-            has_next=(skip + limit) < len(user_responses),
+            total_pages=total_pages,
+            has_next=(skip + limit) < total_items,
             has_prev=skip > 0,
         )
 
