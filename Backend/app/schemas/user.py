@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from pydantic import EmailStr, field_validator
 from sqlmodel import Field, SQLModel
@@ -36,13 +37,16 @@ class UserLogin(UserCreate):
 
 
 class UserUpdate(SQLModel):
-    name: str | None = Field(min_length=2, max_length=50)
-    surname: str | None = Field(min_length=2, max_length=50)
-    email: EmailStr | None = None
-    role: Roles | None = None
+    name: str | None = Field(default=None, min_length=2, max_length=50)
+    surname: str | None = Field(default=None, min_length=2, max_length=50)
+    email: EmailStr | None = Field(default=None)
+
+
+class AdminUserUpdate(UserUpdate):
+    role: Roles | None = Field(default=Roles.MODERATOR)
 
 
 class UserResponse(UserUpdate):
-    id: str
+    id: UUID
     created_at: datetime
     updated_at: datetime

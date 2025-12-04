@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     API: str = "/api"
     PROJECT_NAME: str = "Testify Backend"
     SECRET_KEY: str = secrets.token_urlsafe(32)
+    REFRESH_SECRET_KEY: str = secrets.token_urlsafe(32)
     API_KEY_SECRET: str = secrets.token_urlsafe(48)
     API_KEY_DISPLAY_PREFIX: str = "sk-proj-"
     API_KEY_PREFIX_BODY_CHARS: int = 8
@@ -35,6 +36,17 @@ class Settings(BaseSettings):
         if self.ENVIRONMENT == "production":
             return 60  # 60 minutes in production
         return 60 * 24 * 8  # 8 days in development
+
+    @property
+    def REFRESH_TOKEN_EXPIRE_DAYS(self) -> int:
+        """
+        Refresh token expiration time based on environment:
+        - development: 30 days
+        - production: 7 days
+        """
+        if self.ENVIRONMENT == "production":
+            return 7  # 7 days in production
+        return 30  # 30 days in development
 
     # postgres
     POSTGRES_SERVER: str

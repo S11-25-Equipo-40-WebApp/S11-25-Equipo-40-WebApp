@@ -1,4 +1,5 @@
 from datetime import datetime
+from uuid import UUID
 
 from sqlmodel import Field, SQLModel
 
@@ -16,6 +17,7 @@ class APIKeyUpdate(APIKeyCreate):
 
 
 class APIKeyListResponse(SQLModel):
+    id: UUID
     name: str | None
     prefix: str
     revoked: bool
