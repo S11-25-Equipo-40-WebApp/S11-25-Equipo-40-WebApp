@@ -34,7 +34,13 @@ class TestGetUsers:
         mock_user2.updated_at = datetime.now()
 
         mock_users = [mock_user1, mock_user2]
-        mock_db.exec.return_value.all.return_value = mock_users
+
+        # Mock the count query (first call) and the users query (second call)
+        mock_count_result = Mock()
+        mock_count_result.one.return_value = 2
+        mock_users_result = Mock()
+        mock_users_result.all.return_value = mock_users
+        mock_db.exec.side_effect = [mock_count_result, mock_users_result]
 
         result = UserService.get_users(mock_db, skip=0, limit=10)
 
@@ -46,7 +52,13 @@ class TestGetUsers:
     def test_get_users_empty_list(self):
         """Test get_users with empty database."""
         mock_db = Mock()
-        mock_db.exec.return_value.all.return_value = []
+
+        # Mock the count query (first call) and the users query (second call)
+        mock_count_result = Mock()
+        mock_count_result.one.return_value = 0
+        mock_users_result = Mock()
+        mock_users_result.all.return_value = []
+        mock_db.exec.side_effect = [mock_count_result, mock_users_result]
 
         result = UserService.get_users(mock_db, skip=0, limit=10)
 
@@ -68,7 +80,13 @@ class TestGetUsers:
             mock_user.created_at = datetime.now()
             mock_user.updated_at = datetime.now()
             mock_users.append(mock_user)
-        mock_db.exec.return_value.all.return_value = mock_users
+
+        # Mock the count query (first call) and the users query (second call)
+        mock_count_result = Mock()
+        mock_count_result.one.return_value = 20  # Total of 20 users
+        mock_users_result = Mock()
+        mock_users_result.all.return_value = mock_users
+        mock_db.exec.side_effect = [mock_count_result, mock_users_result]
 
         result = UserService.get_users(mock_db, skip=10, limit=5)
 
@@ -114,8 +132,10 @@ class TestSoftDeleteUser:
         mock_user.is_active = True
         mock_db.get.return_value = mock_user
 
-        UserService.soft_delete_user(mock_db, user_id)
+        with pytest.raises(HTTPException) as exc_info:
+            UserService.soft_delete_user(mock_db, user_id)
 
+        assert exc_info.value.status_code == status.HTTP_204_NO_CONTENT
         assert mock_user.is_active is False
         assert mock_db.add.called
         assert mock_db.commit.called
