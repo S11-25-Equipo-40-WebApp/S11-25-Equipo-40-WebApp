@@ -4,12 +4,11 @@ from fastapi import HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from sqlmodel import Session, select
 
+from app.core.config import settings
 from app.core.jwt import create_access_token, create_refresh_token
 from app.core.security import hash_password, verify_password
 from app.models.user import User
-from app.schemas.user import UserCreate, UserUpdate
-
-PROHIBITED_FIELDS = ["role", "id"]
+from app.schemas.user import UserCreate
 
 
 class AuthService:
@@ -42,10 +41,12 @@ class AuthService:
                 status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials"
             )
         access_token = create_access_token(
-            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(minutes=30)
+            {"sub": str(user.id), "role": user.role},
+            expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
         refresh_token = create_refresh_token(
-            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(days=30)
+            {"sub": str(user.id), "role": user.role},
+            expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
         return {
             "access_token": access_token,
@@ -54,32 +55,14 @@ class AuthService:
         }
 
     @staticmethod
-    def update_user(db: Session, current_user: User, data: UserUpdate):
-        stmt = select(User).where(User.email == current_user.email)
-        result = db.exec(stmt)
-        user = result.one_or_none()
-        if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-        payload = data.model_dump(exclude_unset=True)
-        for field in PROHIBITED_FIELDS:
-            if field in payload:
-                raise HTTPException(
-                    status_code=403, detail=f"No puedes modificar el campo '{field}'."
-                )
-        for key, value in payload.items():
-            setattr(user, key, value)
-        db.add(user)
-        db.commit()
-        db.refresh(user)
-        return user
-
-    @staticmethod
     def create_new_access_token(user: User):
         access_token = create_access_token(
-            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(minutes=30)
+            {"sub": str(user.id), "role": user.role},
+            expires_delta=timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES),
         )
         refresh_token = create_refresh_token(
-            {"sub": str(user.id), "role": user.role}, expires_delta=timedelta(days=30)
+            {"sub": str(user.id), "role": user.role},
+            expires_delta=timedelta(days=settings.REFRESH_TOKEN_EXPIRE_DAYS),
         )
         return {
             "access_token": access_token,
