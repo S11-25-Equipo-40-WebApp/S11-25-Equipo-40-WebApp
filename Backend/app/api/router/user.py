@@ -55,7 +55,7 @@ def get_user_by_id(user_id: UUID, db: SessionDep, current_user: ModeratorDep):
     return UserService.get_user_by_id(db, user_id)
 
 
-@router.patch("/delete/{user_id}")
+@router.patch("/delete/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
 def soft_delete_user(user_id: UUID, db: SessionDep, current_user: AdminDep):
     return UserService.soft_delete_user(db, user_id)
 
