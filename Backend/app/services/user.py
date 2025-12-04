@@ -48,10 +48,7 @@ class UserService:
         user.is_active = False
         db.add(user)
         db.commit()
-
-        raise HTTPException(
-            status_code=status.HTTP_204_NO_CONTENT, detail="User soft deleted successfully"
-        )
+        return
 
     @staticmethod
     def update_user(db: SessionDep, user_id: UUID, data):
