@@ -40,7 +40,10 @@ class UserUpdate(SQLModel):
     name: str | None = Field(default=None, min_length=2, max_length=50)
     surname: str | None = Field(default=None, min_length=2, max_length=50)
     email: EmailStr | None = Field(default=None)
-    role: Roles | None = None
+
+
+class AdminUserUpdate(UserUpdate):
+    role: Roles | None = Field(default=Roles.MODERATOR)
 
 
 class UserResponse(UserUpdate):
