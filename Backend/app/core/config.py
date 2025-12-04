@@ -37,6 +37,17 @@ class Settings(BaseSettings):
             return 60  # 60 minutes in production
         return 60 * 24 * 8  # 8 days in development
 
+    @property
+    def REFRESH_TOKEN_EXPIRE_DAYS(self) -> int:
+        """
+        Refresh token expiration time based on environment:
+        - development: 30 days
+        - production: 7 days
+        """
+        if self.ENVIRONMENT == "production":
+            return 7  # 7 days in production
+        return 30  # 30 days in development
+
     # postgres
     POSTGRES_SERVER: str
     POSTGRES_PORT: int = 5432
