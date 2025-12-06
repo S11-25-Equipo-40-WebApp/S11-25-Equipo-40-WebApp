@@ -40,13 +40,13 @@ export default function HomePage() {
           {/* esto es del login */}
           <TabsContent value="login" className="space-y-4">
             <div>
-              <Label htmlFor="email" className="text-gray-300">Correo Electrónico</Label>
-              <Input id="email" placeholder="tucorreo@ejemplo.com" type="email" />
+              <Label htmlFor="email" className="text-gray-300 p-1">Correo Electrónico</Label>
+              <Input id="email" placeholder="tucorreo@ejemplo.com" type="email"  className="text-gray-300" />
             </div>
 
             <div>
-              <Label htmlFor="password" className="text-gray-300">Contraseña</Label>
-              <Input id="password" type="password" placeholder="Ingresa tu contraseña" />
+              <Label htmlFor="password" className="text-gray-300 p-1">Contraseña</Label>
+              <Input id="password" type="password" placeholder="Ingresa tu contraseña"  className="text-gray-300" />
             </div>
 
             <a href="#" className="block text-right text-sm text-blue-400 hover:underline">
@@ -66,23 +66,23 @@ export default function HomePage() {
           {/* esto es del EGISTER */}
           <TabsContent value="register" className="space-y-4">
             <div>
-              <Label htmlFor="nombre" className="text-gray-300">Nombre Completo</Label>
-              <Input id="nombre" placeholder="Tu nombre" type="text" />
+              <Label htmlFor="nombre" className="text-gray-300 p-1">Nombre Completo</Label>
+              <Input id="nombre" placeholder="Tu nombre" type="text" className="text-gray-300" />
             </div>
 
             <div>
-              <Label htmlFor="emailReg" className="text-gray-300">Correo Electrónico</Label>
-              <Input id="emailReg" placeholder="tucorreo@ejemplo.com" type="email" />
+              <Label htmlFor="emailReg" className="text-gray-300 p-1">Correo Electrónico</Label>
+              <Input id="emailReg" placeholder="tucorreo@ejemplo.com" type="email"  className="text-gray-300" />
             </div>
 
             <div>
-              <Label htmlFor="passwordReg" className="text-gray-300">Contraseña</Label>
-              <Input id="passwordReg" type="password" placeholder="Crea una contraseña" />
+              <Label htmlFor="passwordReg" className="text-gray-300 p-1">Contraseña</Label>
+              <Input id="passwordReg" type="password" placeholder="Crea una contraseña"  className="text-gray-300" />
             </div>
 
             <div>
-              <Label htmlFor="passwordReg" className="text-gray-300">Confirmar contraseña</Label>
-              <Input id="passwordReg" type="password" placeholder="Confirmar una contraseña" />
+              <Label htmlFor="passwordReg" className="text-gray-300 p-1">Confirmar contraseña</Label>
+              <Input id="passwordReg" type="password" placeholder="Confirmar una contraseña"  className="text-gray-300" />
             </div>
 
             <Button className="bg-(--color-blue-btn) hover:bg-blue-700 transition w-full mt-2">Registrarse</Button>
