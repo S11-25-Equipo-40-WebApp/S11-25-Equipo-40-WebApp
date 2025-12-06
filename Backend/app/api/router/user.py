@@ -75,8 +75,9 @@ def admin_user_update(
 
 
 @router.get("/email/{email}", response_model=UserResponse)
-def get_by_email(email: EmailStr, db: SessionDep, current_user: ModeratorDep):
-    return UserService.get_user_by_email(db, email)
-    return UserService.get_user_by_email(db, email)
-    return UserService.get_user_by_email(db, email)
+def get_by_email(
+    email: EmailStr,
+    db: SessionDep,
+    current_user: ModeratorDep,
+):
     return UserService.get_user_by_email(db, email)
