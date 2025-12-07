@@ -1,7 +1,9 @@
 from enum import StrEnum
 from typing import TYPE_CHECKING
+from uuid import UUID
 
 from pydantic import EmailStr
+from sqlalchemy import Enum as SQLEnum
 from sqlmodel import Field, Relationship
 
 from .abstract import AbstractActive
@@ -11,9 +13,9 @@ if TYPE_CHECKING:
 
 
 class Roles(StrEnum):
+    OWNER = "owner"
     ADMIN = "admin"
     MODERATOR = "moderator"
-    USER = "user"
 
 
 class User(AbstractActive, table=True):
@@ -21,7 +23,13 @@ class User(AbstractActive, table=True):
     name: str | None = None
     surname: str | None = None
     hashed_password: str
-    role: Roles = Field(default=Roles.USER)
+    role: Roles = Field(
+        default=Roles.OWNER,
+        sa_type=SQLEnum(Roles, native_enum=True, values_callable=lambda x: [e.value for e in x]),
+    )
+
+    # Multitenancy
+    owner_id: UUID | None = Field(default=None, foreign_key="user.id")
 
     # relationships
     testimonials: list["Testimonial"] = Relationship(back_populates="author")
