@@ -57,10 +57,13 @@ class UserService:
                 status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists"
             )
 
+        # El nuevo usuario debe pertenecer al tenant owner, no al creador
+        tenant_owner_id = UserService._get_tenant_owner_id(owner)
+
         user = User(
             **data.model_dump(exclude={"password"}),
             hashed_password=hash_password(data.password),
-            owner_id=owner.id,
+            owner_id=tenant_owner_id,
         )
 
         db.add(user)
@@ -139,8 +142,17 @@ class UserService:
             User: the retrieved user
         """
         user = db.get(User, id)
-        if not user or user.owner_id != current_user.owner_id:
+
+        if not user:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+        # Validar que pertenece al mismo owner/tenant
+        tenant_owner_id = UserService._get_tenant_owner_id(current_user)
+        user_tenant_owner_id = UserService._get_tenant_owner_id(user)
+
+        if user_tenant_owner_id != tenant_owner_id:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
         return user
 
     @staticmethod
@@ -233,7 +245,7 @@ class UserService:
         Returns:
             User: the retrieved user
         """
-        tenant_owner_id = current_user.owner_id if current_user.owner_id else current_user.id
+        tenant_owner_id = UserService._get_tenant_owner_id(current_user)
 
         user = db.exec(
             select(User).where(
