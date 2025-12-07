@@ -17,6 +17,18 @@ from app.schemas.user import (
 
 class UserService:
     @staticmethod
+    def _get_tenant_owner_id(user: User) -> UUID:
+        """Get the tenant owner ID for a user.
+
+        Args:
+            user: User to get the tenant owner ID for
+
+        Returns:
+            UUID: The tenant owner ID (user's owner_id if set, otherwise user's id)
+        """
+        return user.owner_id if user.owner_id else user.id
+
+    @staticmethod
     def create_user_for_owner(db: SessionDep, owner: User, data: UserCreateInternal) -> User:
         """Create a new user under the owner or admin
 
@@ -72,7 +84,7 @@ class UserService:
             PaginationResponse[UserResponse]: paginated list of users
         """
         # Determinar el ID del owner del tenant
-        tenant_owner_id = current_user.owner_id if current_user.owner_id else current_user.id
+        tenant_owner_id = UserService._get_tenant_owner_id(current_user)
 
         total_items = db.exec(
             select(func.count())
@@ -150,8 +162,8 @@ class UserService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         # Validar que pertenece al mismo owner/tenant
-        tenant_owner_id = current_user.owner_id if current_user.owner_id else current_user.id
-        user_tenant_owner_id = user.owner_id if user.owner_id else user.id
+        tenant_owner_id = UserService._get_tenant_owner_id(current_user)
+        user_tenant_owner_id = UserService._get_tenant_owner_id(user)
 
         if user_tenant_owner_id != tenant_owner_id:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -187,8 +199,8 @@ class UserService:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         # Determinar el ID del owner del tenant
-        tenant_owner_id = current_user.owner_id if current_user.owner_id else current_user.id
-        user_tenant_owner_id = user.owner_id if user.owner_id else user.id
+        tenant_owner_id = UserService._get_tenant_owner_id(current_user)
+        user_tenant_owner_id = UserService._get_tenant_owner_id(user)
 
         # Validar que pertenezca al mismo tenant
         if user_tenant_owner_id != tenant_owner_id:
