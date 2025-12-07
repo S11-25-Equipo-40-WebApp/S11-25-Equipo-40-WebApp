@@ -233,8 +233,16 @@ class UserService:
         Returns:
             User: the retrieved user
         """
+        tenant_owner_id = current_user.owner_id if current_user.owner_id else current_user.id
+
         user = db.exec(
-            select(User).where(User.email == email, User.owner_id == current_user.owner_id)
+            select(User).where(
+                User.email == email,
+                or_(
+                    User.owner_id == tenant_owner_id,
+                    User.id == tenant_owner_id,
+                ),
+            )
         ).first()
 
         if not user:
