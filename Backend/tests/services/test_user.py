@@ -7,6 +7,7 @@ import pytest
 from fastapi import HTTPException, status
 
 from app.models.user import Roles
+from app.schemas.user import UserCreateInternal
 from app.services.user import UserService
 
 
@@ -21,6 +22,96 @@ def create_mock_user(user_id=None, email="test@example.com", role=Roles.OWNER, o
     mock_user.surname = "User"
     mock_user.is_active = True
     return mock_user
+
+
+class TestCreateUserForOwner:
+    """Tests for create_user_for_owner method."""
+
+    def test_create_user_by_owner_success(self):
+        """Test successful user creation by owner."""
+        mock_db = Mock()
+        owner_id = uuid4()
+        owner = create_mock_user(user_id=owner_id, role=Roles.OWNER, owner_id=None)
+
+        # Mock para verificar que no existe el email
+        mock_db.exec.return_value.one_or_none.return_value = None
+
+        data = Mock(spec=UserCreateInternal)
+        data.email = "newuser@example.com"
+        data.password = "SecurePass123!"
+        data.model_dump.return_value = {
+            "email": "newuser@example.com",
+            "name": "New",
+            "surname": "User",
+            "role": Roles.MODERATOR,
+        }
+
+        UserService.create_user_for_owner(mock_db, owner, data)
+
+        # Verificar que se llamó a db.add, commit y refresh
+        assert mock_db.add.called
+        assert mock_db.commit.called
+        assert mock_db.refresh.called
+
+    def test_create_user_by_admin_assigns_to_tenant_owner(self):
+        """Test that admin creates users under the tenant owner, not under themselves."""
+        mock_db = Mock()
+        tenant_owner_id = uuid4()
+        admin_id = uuid4()
+        admin = create_mock_user(user_id=admin_id, role=Roles.ADMIN, owner_id=tenant_owner_id)
+
+        # Mock para verificar que no existe el email
+        mock_db.exec.return_value.one_or_none.return_value = None
+
+        data = Mock(spec=UserCreateInternal)
+        data.email = "newuser@example.com"
+        data.password = "SecurePass123!"
+        data.model_dump.return_value = {
+            "email": "newuser@example.com",
+            "name": "New",
+            "surname": "User",
+            "role": Roles.MODERATOR,
+        }
+
+        UserService.create_user_for_owner(mock_db, admin, data)
+
+        # Verificar que se llamó a db.add con un usuario
+        assert mock_db.add.called
+        # El usuario creado debe tener owner_id = tenant_owner_id, no admin_id
+        created_user = mock_db.add.call_args[0][0]
+        assert created_user.owner_id == tenant_owner_id
+
+    def test_create_user_by_moderator_fails(self):
+        """Test that moderators cannot create users."""
+        mock_db = Mock()
+        moderator = create_mock_user(role=Roles.MODERATOR)
+
+        data = Mock(spec=UserCreateInternal)
+        data.email = "newuser@example.com"
+
+        with pytest.raises(HTTPException) as exc_info:
+            UserService.create_user_for_owner(mock_db, moderator, data)
+
+        assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
+        assert "No permission to create users" in str(exc_info.value.detail)
+
+    def test_create_user_duplicate_email_fails(self):
+        """Test that creating a user with duplicate email fails."""
+        mock_db = Mock()
+        owner = create_mock_user(role=Roles.OWNER)
+
+        # Mock para simular que el email ya existe
+        existing_user = Mock()
+        mock_db.exec.return_value.one_or_none.return_value = existing_user
+
+        data = Mock(spec=UserCreateInternal)
+        data.email = "existing@example.com"
+
+        with pytest.raises(HTTPException) as exc_info:
+            UserService.create_user_for_owner(mock_db, owner, data)
+
+        assert exc_info.value.status_code == status.HTTP_400_BAD_REQUEST
+        assert "Email already exists" in str(exc_info.value.detail)
 
 
 class TestGetUsers:
