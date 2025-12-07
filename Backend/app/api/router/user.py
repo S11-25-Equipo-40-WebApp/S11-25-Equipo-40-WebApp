@@ -4,7 +4,7 @@ from fastapi import APIRouter, HTTPException, Query, status
 from pydantic import EmailStr
 
 from app.core.db import SessionDep
-from app.core.deps import AdminDep, ModeratorDep, OwnerDep
+from app.core.deps import AdminDep, ModeratorDep
 from app.models.user import Roles
 from app.schemas import (
     AdminUserUpdate,
@@ -28,14 +28,14 @@ router = APIRouter(
 def create_user_for_owner(
     data: UserCreateInternal,
     db: SessionDep,
-    current_user: OwnerDep,
+    current_user: AdminDep,
 ):
     """Create a new user under the owner or admin
 
     Args:
     - data (UserCreateInternal): data for creating the new user
     - db (SessionDep): database session
-    - current_user (OwnerDep): current user making the request
+    - current_user (AdminDep): current user making the request
 
     Returns:
     - UserResponse: the newly created user
