@@ -81,18 +81,29 @@ async def get_refresh_user(
     return user
 
 
+def require_owner(current_user: User = Depends(get_current_user)):
+    if current_user.role != Roles.OWNER:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Solo los propietarios tienen permisos."
+        )
+    return current_user
+
+
 def require_admin(current_user: User = Depends(get_current_user)):
-    if current_user.role != Roles.ADMIN.value:
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos.")
+    if current_user.role not in [Roles.OWNER, Roles.ADMIN]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Solo los propietarios y administradores tienen permisos.",
+        )
     return current_user
 
 
 def require_moderator(current_user: User = Depends(get_current_user)):
-    if current_user.role not in [Roles.ADMIN.value, Roles.MODERATOR.value]:
+    if current_user.role not in [Roles.OWNER, Roles.ADMIN, Roles.MODERATOR]:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="No tienes permisos.")
     return current_user
 
 
-UserDep = Annotated[User, Depends(get_current_user)]
+OwnerDep = Annotated[User, Depends(require_owner)]
 AdminDep = Annotated[User, Depends(require_admin)]
 ModeratorDep = Annotated[User, Depends(require_moderator)]

@@ -4,7 +4,13 @@ from .pagination import PaginationResponse
 from .tag import TagCreate, TagResponse, TagUpdate
 from .testimonial import TestimonialCreate, TestimonialResponse, TestimonialUpdate
 from .token import TokenResponse
-from .user import AdminUserUpdate, UserCreate, UserLogin, UserResponse, UserUpdate
+from .user import (
+    AdminUserUpdate,
+    UserCreate,
+    UserCreateInternal,
+    UserResponse,
+    UserUpdate,
+)
 
 __all__ = [
     "TokenResponse",
@@ -23,7 +29,7 @@ __all__ = [
     "TestimonialUpdate",
     "AdminUserUpdate",
     "UserCreate",
-    "UserLogin",
+    "UserCreateInternal",
     "UserResponse",
     "UserUpdate",
     "PaginationResponse",
