@@ -5,58 +5,61 @@ import { AppSidebar } from "@/components/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Trash2, ThumbsUp } from "lucide-react"
-import { useState, useEffect } from "react"
+import { useState, useEffect, ChangeEvent } from "react"
 import Image from "next/image"
-import Link from "next/link";
+import Link from "next/link"
 
+interface Testimonial {
+  id: string
+  user: string
+  email: string
+  product: string
+  rating: number
+  status: string
+  excerpt: string
+  avatar?: string
+}
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
 export default function TestimonialsPage() {
-  const [testimonials, setTestimonials] = useState([])
-  const [filteredTestimonials, setFilteredTestimonials] = useState([])
-  const [currentPage, setCurrentPage] = useState(1)
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedProduct, setSelectedProduct] = useState("all")
-  const [loading, setLoading] = useState(true)
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([])
+  const [filteredTestimonials, setFilteredTestimonials] = useState<Testimonial[]>([])
+  const [currentPage, setCurrentPage] = useState<number>(1)
+  const [searchTerm, setSearchTerm] = useState<string>("")
+  const [selectedStatus, setSelectedStatus] = useState<string>("all")
+  const [selectedProduct, setSelectedProduct] = useState<string>("all")
+  const [loading, setLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const itemsPerPage = 3
 
-  // Hacer la petición para obtener los testimonios
   useEffect(() => {
     fetchTestimonials()
   }, [])
 
   const fetchTestimonials = async () => {
-  try {
-    setLoading(true)
+    try {
+      setLoading(true)
+      const response = await fetch(`${API_URL}/testimonials`)
+      if (!response.ok) throw new Error("Error fetching testimonials")
 
-    const response = await fetch(`${API_URL}/testimonials`)
-    if (!response.ok) throw new Error("Error fetching testimonials")
-
-    const data = await response.json()
-    setTestimonials(data || [])
-    setFilteredTestimonials(data || [])
-
-  } catch (err) {
-    if (err instanceof Error) {
-      setError(err.message)
-      console.error(err.message)
-    } else {
-      setError("Error inesperado")
-      console.error(err)
+      const data: Testimonial[] = await response.json()
+      setTestimonials(data || [])
+      setFilteredTestimonials(data || [])
+    } catch (err) {
+      if (err instanceof Error) {
+        setError(err.message)
+      } else {
+        setError("Error inesperado")
+      }
+    } finally {
+      setLoading(false)
     }
-  } finally {
-    setLoading(false)
   }
-}
 
-
-  // Filtrar testimonios
   useEffect(() => {
     let filtered = testimonials
 
@@ -80,62 +83,48 @@ export default function TestimonialsPage() {
     setCurrentPage(1)
   }, [searchTerm, selectedStatus, selectedProduct, testimonials])
 
-  const renderStars = (rating: number) => {
-    return (
-      <div className="flex gap-1">
-        {[...Array(5)].map((_, i) => (
-          <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-600"}>★</span>
-        ))}
-      </div>
-    )
-  }
+  const renderStars = (rating: number) => (
+    <div className="flex gap-1">
+      {[...Array(5)].map((_, i) => (
+        <span key={i} className={i < rating ? "text-yellow-400" : "text-gray-600"}>★</span>
+      ))}
+    </div>
+  )
 
-  const handleSelectAll = (e) => {
+  const handleSelectAll = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const ids = new Set(paginatedTestimonials.map(t => t.id))
-      setSelectedIds(ids)
+      setSelectedIds(new Set(paginatedTestimonials.map(t => t.id)))
     } else {
       setSelectedIds(new Set())
     }
   }
 
-  const handleSelectItem = (id) => {
+  const handleSelectItem = (id: string) => {
     const newSelected = new Set(selectedIds)
-    if (newSelected.has(id)) {
-      newSelected.delete(id)
-    } else {
-      newSelected.add(id)
-    }
+    newSelected.has(id) ? newSelected.delete(id) : newSelected.add(id)
     setSelectedIds(newSelected)
   }
 
   const handleApprove = async () => {
-    try {
-      await fetch(`${API_URL}/testimonials/approve`, {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selectedIds) }),
-      })
-      setSelectedIds(new Set())
-      fetchTestimonials()
-    } catch (err) {
-      console.error(err)
-    }
+    await fetch(`${API_URL}/testimonials/approve`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: Array.from(selectedIds) }),
+    })
+    setSelectedIds(new Set())
+    fetchTestimonials()
   }
 
   const handleDelete = async () => {
-    if (!confirm("¿Estás seguro de que deseas eliminar los testimonios seleccionados?")) return
-    try {
-      await fetch(`${API_URL}/testimonials`, {
-        method: "DELETE",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ids: Array.from(selectedIds) }),
-      })
-      setSelectedIds(new Set())
-      fetchTestimonials()
-    } catch (err) {
-      console.error(err)
-    }
+    if (!confirm("¿Estás seguro de eliminar los testimonios seleccionados?")) return
+
+    await fetch(`${API_URL}/testimonials`, {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ids: Array.from(selectedIds) }),
+    })
+    setSelectedIds(new Set())
+    fetchTestimonials()
   }
 
   const totalPages = Math.ceil(filteredTestimonials.length / itemsPerPage)
@@ -145,7 +134,15 @@ export default function TestimonialsPage() {
   const products = [...new Set(testimonials.map(t => t.product))]
   const statuses = [...new Set(testimonials.map(t => t.status))]
 
-  if (loading) return <div className="flex min-h-screen w-full bg-[#0f172a] text-white text-center items-center justify-center">Cargando...</div>
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-[#0f172a] text-white">
+        Cargando...
+      </div>
+    )
+  }
+
+
 
   return (
     <SidebarProvider>
