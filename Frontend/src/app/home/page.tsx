@@ -80,7 +80,7 @@ export default function HomePage() {
           ))}
         </div>
         <div className="text-center">
-          <button variant="secondary">Cargar más testimonios</button>
+          <button >Cargar más testimonios</button>
         </div>
       </section>
     </main>
