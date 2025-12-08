@@ -10,20 +10,29 @@ import Image from "next/image"
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
 
+interface User {
+  id: string
+  name: string
+  email: string
+  role: string
+  status: string
+  avatar: string
+  registerDate: string
+}
+
 export default function UsuariosPage() {
 
-  const [users, setUsers] = useState([])
-  const [filteredUsers, setFilteredUsers] = useState([])
+  const [users, setUsers] = useState<User[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("all")
   const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedIds, setSelectedIds] = useState(new Set())
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 4
 
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
-
+  const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     fetchUsers()
@@ -34,28 +43,25 @@ export default function UsuariosPage() {
       setLoading(true)
       const res = await fetch(`${API_URL}/users`)
       if (!res.ok) throw new Error("Error obteniendo usuarios")
-      const data = await res.json()
+      const data: User[] = await res.json()
 
       setUsers(data)
       setFilteredUsers(data)
     } catch (err) {
-      //@ts-ignore
-      setError(err.message)
+      if (err instanceof Error) {
+        setError(err.message)
+      }
     } finally {
       setLoading(false)
     }
   }
 
-
-
   useEffect(() => {
     let filtered = users
-    
+
     if (searchTerm) {
       filtered = filtered.filter(u =>
-         //@ts-ignore
         u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-         //@ts-ignore
         u.email.toLowerCase().includes(searchTerm.toLowerCase())
       )
     }
@@ -73,13 +79,12 @@ export default function UsuariosPage() {
   }, [searchTerm, selectedRole, selectedStatus, users])
 
 
-
   const paginated = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
   )
-  //@ts-ignore
-  const handleSelectAll = (e) => {
+
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
       const ids = new Set(paginated.map(u => u.id))
       setSelectedIds(ids)
@@ -88,8 +93,7 @@ export default function UsuariosPage() {
     }
   }
 
-   //@ts-ignore
-  const handleSelectItem = (id) => {
+  const handleSelectItem = (id: string) => {
     const updated = new Set(selectedIds)
     updated.has(id) ? updated.delete(id) : updated.add(id)
     setSelectedIds(updated)
@@ -97,8 +101,13 @@ export default function UsuariosPage() {
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
 
-   if (loading) return <div className="flex min-h-screen w-full bg-[#0f172a] text-white text-center items-center justify-center">Cargando...</div>
-
+  if (loading) {
+    return (
+      <div className="flex min-h-screen w-full bg-[#0f172a] text-white items-center justify-center">
+        Cargando...
+      </div>
+    )
+  }
 
   return (
     <SidebarProvider>
@@ -110,10 +119,11 @@ export default function UsuariosPage() {
 
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
-              <Button className="bg-blue-600 hover:bg-blue-700">+ Añadir Nuevo Usuario</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700">
+                + Añadir Nuevo Usuario
+              </Button>
             </div>
 
-        
             <div className="flex gap-4 mb-6">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -128,14 +138,13 @@ export default function UsuariosPage() {
               <select
                 className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm"
                 value={selectedRole}
-                onChange={(e) => setSelectedRole(e.target.value)}>
-
+                onChange={(e) => setSelectedRole(e.target.value)}
+              >
                 <option value="all">Rol: Todos</option>
                 <option value="Administrador">Administrador</option>
                 <option value="Usuario">Usuario</option>
               </select>
 
-            
               <select
                 className="bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm"
                 value={selectedStatus}
@@ -147,11 +156,7 @@ export default function UsuariosPage() {
               </select>
             </div>
 
-
-        
             <div className="border border-gray-700 rounded-lg overflow-hidden">
-
-    
               <div className="bg-gray-900 border-b border-gray-700 px-6 py-4 grid grid-cols-12 gap-4">
                 <div><input type="checkbox" onChange={handleSelectAll} /></div>
                 <div className="col-span-3 font-semibold">Nombre de Usuario</div>
@@ -161,8 +166,7 @@ export default function UsuariosPage() {
                 <div className="col-span-1 font-semibold">Acciones</div>
               </div>
 
-          
-              {paginated.map((u) => (
+              {paginated.map(u => (
                 <div
                   key={u.id}
                   className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-700 hover:bg-gray-900/50 items-center"
@@ -175,7 +179,6 @@ export default function UsuariosPage() {
                     />
                   </div>
 
-                  
                   <div className="col-span-3 flex gap-3 items-center">
                     <Image
                       src={u.avatar}
@@ -198,10 +201,10 @@ export default function UsuariosPage() {
                     </span>
                   </div>
 
-             
-                  <div className="col-span-3 text-gray-300">{u.registerDate}</div>
+                  <div className="col-span-3 text-gray-300">
+                    {u.registerDate}
+                  </div>
 
-                
                   <div className="col-span-2">
                     <span className={`px-3 py-1 rounded text-sm ${
                       u.status === "Activo" ? "bg-green-600" : "bg-yellow-600"
@@ -214,13 +217,10 @@ export default function UsuariosPage() {
                     <Pencil className="cursor-pointer hover:text-blue-400" />
                     <Trash2 className="cursor-pointer hover:text-red-400" />
                   </div>
-
                 </div>
               ))}
             </div>
 
-
-            {/*esta es la paginacion */}
             <div className="flex justify-between items-center mt-6 text-sm text-gray-400">
               <span>
                 Mostrando {(currentPage - 1) * itemsPerPage + 1} -
