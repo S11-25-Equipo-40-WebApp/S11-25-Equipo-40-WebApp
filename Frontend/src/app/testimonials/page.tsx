@@ -20,7 +20,8 @@ export default function TestimonialsPage() {
   const [selectedStatus, setSelectedStatus] = useState("all")
   const [selectedProduct, setSelectedProduct] = useState("all")
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState(null)
+  const [error, setError] = useState<string | null>(null)
+
   const [selectedIds, setSelectedIds] = useState(new Set())
 
   const itemsPerPage = 3
