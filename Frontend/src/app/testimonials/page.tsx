@@ -31,20 +31,29 @@ export default function TestimonialsPage() {
   }, [])
 
   const fetchTestimonials = async () => {
-    try {
-      setLoading(true)
-      const response = await fetch(`${API_URL}/testimonials`)
-      if (!response.ok) throw new Error("Error fetching testimonials")
-      const data = await response.json()
-      setTestimonials(data || [])
-      setFilteredTestimonials(data || [])
-    } catch (err) {
+  try {
+    setLoading(true)
+
+    const response = await fetch(`${API_URL}/testimonials`)
+    if (!response.ok) throw new Error("Error fetching testimonials")
+
+    const data = await response.json()
+    setTestimonials(data || [])
+    setFilteredTestimonials(data || [])
+
+  } catch (err) {
+    if (err instanceof Error) {
       setError(err.message)
+      console.error(err.message)
+    } else {
+      setError("Error inesperado")
       console.error(err)
-    } finally {
-      setLoading(false)
     }
+  } finally {
+    setLoading(false)
   }
+}
+
 
   // Filtrar testimonios
   useEffect(() => {
