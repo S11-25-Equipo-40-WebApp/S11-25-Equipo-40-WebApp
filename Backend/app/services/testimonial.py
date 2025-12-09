@@ -156,12 +156,6 @@ class TestimonialService:
             for field, value in content_data.items():
                 setattr(testimonial, field, value)
 
-        # Update media fields if provided
-        if data.media:
-            media_data = data.media.model_dump(exclude_unset=True)
-            for field, value in media_data.items():
-                setattr(testimonial, field, value)
-
         # Update category if provided
         if data.category_name:
             category = CategoryService.get_or_create_category(data.category_name, db)

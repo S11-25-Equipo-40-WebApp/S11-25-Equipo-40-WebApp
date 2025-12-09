@@ -105,6 +105,5 @@ class TestimonialResponse(SQLModel):
 
 class TestimonialUpdate(SQLModel):
     content: TestimonialContent | None = None
-    media: TestimonialMedia | None = None
     category_name: str | None = None
     tags: list[str] | None = None

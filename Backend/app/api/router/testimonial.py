@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, status
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status
 
 from app.core.db import SessionDep
 from app.core.deps import APIKeyPublicDep, ModeratorDep
@@ -13,6 +13,7 @@ from app.schemas.testimonial import (
     TestimonialUpdate,
 )
 from app.services.api_keys import APIKeyService
+from app.services.cloudinary import CloudinaryService
 from app.services.testimonial import TestimonialService
 from app.services.user import UserService
 
@@ -20,6 +21,31 @@ router = APIRouter(
     prefix="/testimonials",
     tags=["Testimonial"],
 )
+
+
+@router.post(
+    "/upload-images",
+    status_code=status.HTTP_200_OK,
+    summary="Upload images to Cloudinary",
+    description="Upload images and receive URLs to use in testimonial creation",
+)
+def upload_images(
+    api_key: APIKeyPublicDep,
+    images: list[UploadFile] = File(..., description="Images to upload (max 5)"),
+):
+    """Upload images to Cloudinary and return their secure URLs.
+
+    Use this endpoint before creating a testimonial to get image URLs.
+    Then include those URLs in the `media.image_url` field when creating the testimonial.
+    """
+    if len(images) > 5:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 5 images allowed per upload",
+        )
+
+    image_urls = CloudinaryService.upload_images(images)
+    return {"image_url": image_urls}
 
 
 @router.post(
@@ -32,6 +58,19 @@ def create_testimonial(
     db: SessionDep,
     api_key: APIKeyPublicDep,
 ):
+    """Create a new testimonial with JSON body.
+
+    If you need to upload images, use POST /testimonials/upload-images first
+    to get the URLs, then include them in `media.image_url`.
+
+    Args:
+    - data (TestimonialCreate): data for creating the testimonial
+    - db (SessionDep): database session
+    - api_key (APIKeyPublicDep): API key for authentication
+
+    Returns:
+    - TestimonialResponse: the newly created testimonial
+    """
     tenant_owner_id = APIKeyService.get_tenant_owner_id_from_api_key(api_key)
     testimonial = TestimonialService.create_testimonial(data, db, tenant_owner_id)
     return TestimonialResponse(
@@ -59,6 +98,22 @@ def get_testimonials(
     category_name: str | None = Query(None, description="Filter by category name"),
     tags: list[str] | None = Query(None, description="Filter by tags (must match all)"),
 ):
+    """Get testimonials with pagination and optional filters.
+
+    Args:
+    - db (SessionDep): database session
+    - current_user (ModeratorDep): current user making the request (guaranteed to be moderator or higher by ModeratorDep)
+    - skip (int, optional): Number of items to skip. Defaults to Query(0, ge=0, description="Number of items to skip").
+    - limit (int, optional): Number of items to retrieve. Defaults to Query(10, ge=1, le=100, description="Number of items to retrieve").
+    - search (str | None, optional): Search in title, product name or content. Defaults to Query(None, description="Search in title, product name or content").
+    - status (StatusType | None, optional): Filter by status (pending, approved, rejected). Defaults to Query( None, description="Filter by status (pending, approved, rejected)" ).
+    - rating (int | None, optional): Filter by rating (0-5). Defaults to Query(None, ge=0, le=5, description="Filter by rating (0-5)").
+    - category_name (str | None, optional): Filter by category name. Defaults to Query(None, description="Filter by category name").
+    - tags (list[str] | None, optional): Filter by tags (must match all). Defaults to Query(None, description="Filter by tags (must match all)").
+
+    Returns:
+    - PaginationResponse[TestimonialResponse]: Paginated response containing testimonials
+    """
     tenant_owner_id = UserService._get_tenant_owner_id(current_user)
     testimonials, total_items = TestimonialService.get_testimonials(
         db=db,
@@ -103,6 +158,19 @@ def get_testimonial_by_id(
     db: SessionDep,
     current_user: ModeratorDep,
 ):
+    """Get a testimonial by its ID.
+
+    Args:
+    - testimonial_id (UUID): ID of the testimonial to retrieve
+    - db (SessionDep): database session
+    - current_user (ModeratorDep): current user making the request (guaranteed to be moderator or higher by ModeratorDep)
+
+    Raises:
+    - HTTPException: if the testimonial is not found
+
+    Returns:
+    - TestimonialResponse: the retrieved testimonial
+    """
     tenant_owner_id = UserService._get_tenant_owner_id(current_user)
     testimonial = TestimonialService.get_testimonial_by_id(testimonial_id, db, tenant_owner_id)
     if not testimonial:
@@ -125,6 +193,17 @@ def update_testimonial(
     db: SessionDep,
     current_user: ModeratorDep,
 ):
+    """Update a testimonial by its ID.
+
+    Args:
+    - testimonial_id (UUID): ID of the testimonial to update
+    - data (TestimonialUpdate): data to update the testimonial with
+    - db (SessionDep): database session
+    - current_user (ModeratorDep): current user making the request (guaranteed to be moderator or higher by ModeratorDep)
+
+    Returns:
+    - TestimonialResponse: the updated testimonial
+    """
     tenant_owner_id = UserService._get_tenant_owner_id(current_user)
     testimonial = TestimonialService.update_testimonial(
         data=data,
@@ -148,6 +227,16 @@ def soft_delete_testimonial(
     db: SessionDep,
     current_user: ModeratorDep,
 ):
+    """Soft delete a testimonial by its ID.
+
+    Args:
+    - testimonial_id (UUID): ID of the testimonial to soft delete
+    - db (SessionDep): database session
+    - current_user (ModeratorDep): current user making the request (guaranteed to be moderator or higher by ModeratorDep)
+
+    Returns:
+    - None
+    """
     tenant_owner_id = UserService._get_tenant_owner_id(current_user)
     return TestimonialService.soft_delete_testimonial(testimonial_id, db, tenant_owner_id)
 
@@ -162,6 +251,17 @@ def update_testimonial_status(
     db: SessionDep,
     current_user: ModeratorDep,
 ):
+    """Update the status of a testimonial.
+
+    Args:
+    - testimonial_id (UUID): ID of the testimonial to update the status for
+    - data (TestimonialStatusUpdate): data containing the new status
+    - db (SessionDep): database session
+    - current_user (ModeratorDep): current user making the request (guaranteed to be moderator or higher by ModeratorDep)
+
+    Returns:
+    - None
+    """
     tenant_owner_id = UserService._get_tenant_owner_id(current_user)
     TestimonialService.update_status(testimonial_id, data.status, db, tenant_owner_id)
     return {"message": f"Testimonial status updated to {data.status.value}"}
