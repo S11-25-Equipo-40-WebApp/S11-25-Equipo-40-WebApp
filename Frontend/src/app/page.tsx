@@ -81,6 +81,41 @@ export default function HomePage() {
     }
   }
 
+  const handleLogin = async () => {
+    setError("")
+    setSuccess("")
+    
+    if (!loginEmail || !loginPassword) {
+      setError("Por favor, completa todos los campos.")
+      return
+    }
+
+    try {
+      const formData = new FormData()
+      formData.append("username", loginEmail.trim())
+      formData.append("password", loginPassword)
+
+      const res = await fetch("https://testify-dwtn.onrender.com/api/auth/login", {
+        method: "POST",
+        body: formData
+      })
+
+      const data = await res.json()
+
+      if (res.ok) {
+        setSuccess("Login exitoso")
+        localStorage.setItem("token", data.access_token)
+        setTimeout(() => {
+          window.location.href = "/home"
+        }, 1000)
+      } else {
+        setError(data.detail?.[0]?.msg || data.detail || "Error en el inicio de sesión")
+      }
+    } catch (err) {
+      setError("Error de conexión: " + (err instanceof Error ? err.message : "Desconocido"))
+    }
+  }
+
   return (
     <div className="flex min-h-screen">
       {/* Lado izquierdo */}
@@ -138,7 +173,7 @@ export default function HomePage() {
                   </Label>
                 </div>
 
-                <Button className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2">
+                <Button className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2" onClick={handleLogin}>
                   Ingresar
                 </Button>
               </TabsContent>
