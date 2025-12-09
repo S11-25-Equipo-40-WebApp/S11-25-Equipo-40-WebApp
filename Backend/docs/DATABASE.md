@@ -1,17 +1,19 @@
 # Documentación de la Base de Datos — Testify
 
-Este documento describe el modelo relacional usado por Testify: tablas principales, columnas, claves primarias y foráneas, índices recomendados y un diagrama entidad-relación (ER) en ASCII.
+Este documento describe el modelo relacional actual utilizado por Testify, basado en los modelos definidos en `app/models/`.
+Incluye tablas principales, columnas, claves, restricciones, enumeraciones y recomendaciones de índices.
 
 ---
 
 ## Visión general
 
-Testify gestiona testimonios, categorías, tags y usuarios. Las decisiones principales tomadas en el diseño:
+Testify gestiona testimonios, categorías, etiquetas, usuarios y claves de API. Las decisiones principales tomadas en el diseño actual son:
 
-- Identificadores: `UUID` para todas las entidades
-- Soft delete para `users` y `testimonials` usando `is_active` y `deleted_at`.
-- Many-to-many entre `testimonials` y `tags` mediante tabla de asociación `testimonial_tags`.
-- Timestamps `created_at`, `updated_at` en entidades que lo necesiten.
+- Identificadores: `UUID` para la mayoría de entidades (generados por `Abstract`).
+- Soft delete: modelos que heredan de `AbstractActive` (por ejemplo `User`, `Testimonial`, `APIKey`) incluyen `is_active` y `deleted_at`.
+- `image_url` en `Testimonial` se almacena como JSON (lista de strings).
+- Relación many-to-many entre `Testimonial` y `Tag` mediante `TestimonialTagLink` (tabla de enlace).
+- `APIKey` se almacena con `prefix` y `secret_digest` (digest del token), asociado a `User`.
 
 ---
 
@@ -19,20 +21,33 @@ Testify gestiona testimonios, categorías, tags y usuarios. Las decisiones princ
 
 ```mermaid
 erDiagram
-  USERS {
+  USER {
     UUID id PK
     string email
     string name
     string surname
-    string password_hash
-    json roles
+    string hashed_password
+    enum role
+    UUID owner_id
     boolean is_active
     timestamp created_at
     timestamp updated_at
     timestamp deleted_at
   }
 
-  CATEGORIES {
+  API_KEY {
+    UUID id PK
+    string name
+    string prefix
+    string secret_digest
+    boolean revoked
+    UUID user_id
+    boolean is_active
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  CATEGORY {
     UUID id PK
     string name
     string slug
@@ -40,161 +55,178 @@ erDiagram
     timestamp updated_at
   }
 
-  TESTIMONIALS {
+  TAG {
     UUID id PK
+    string name
+    string slug
+    timestamp created_at
+    timestamp updated_at
+  }
+
+  TESTIMONIAL {
+    UUID id PK
+    string product_id
+    string product_name
     string title
     text content
-    string media_type
-    string media_url
-    string status
-    int views_count
+    json image_url
+    string youtube_url
+    enum status
+    int rating
+    string author_name
+    UUID user_id
+    UUID category_id
     boolean is_active
     timestamp created_at
     timestamp updated_at
     timestamp deleted_at
-    UUID author_id FK
-    UUID category_id FK
   }
 
-  TAGS {
-    UUID id PK
-    string name
-    string slug
-  }
-
-  TESTIMONIAL_TAGS {
+  TESTIMONIAL_TAG_LINK {
     UUID testimonial_id FK
-    int tag_id FK
+    UUID tag_id FK
   }
 
-  USERS ||--o{ TESTIMONIALS : "author"
-  CATEGORIES ||--o{ TESTIMONIALS : "category"
-  TESTIMONIALS ||--o{ TESTIMONIAL_TAGS : "has"
-  TAGS ||--o{ TESTIMONIAL_TAGS : "tagged"
+  USER ||--o{ TESTIMONIAL : "author"
+  USER ||--o{ API_KEY : "api_keys"
+  CATEGORY ||--o{ TESTIMONIAL : "category"
+  TESTIMONIAL ||--o{ TESTIMONIAL_TAG_LINK : "has"
+  TAG ||--o{ TESTIMONIAL_TAG_LINK : "tagged"
 ```
 
-## Tablas principales
+---
 
-A continuación se definen las tablas con columnas, tipos y restricciones principales.
+## Modelos y tablas principales
 
-### 1) users
+Las siguientes descripciones se corresponden con las clases definidas en `app/models`.
 
-- Nombre de tabla: `users`
-- Columnas principales:
+### 1) `User` (tabla `user`)
 
-  - `id` UUID PRIMARY KEY
-  - `email` VARCHAR UNIQUE NOT NULL
-  - `name` VARCHAR
-  - `surname` VARCHAR
-  - `is_active` BOOLEAN DEFAULT TRUE
-  - `roles` JSONB or TEXT (lista de roles, p.ej. ['admin','moderator','user'])
-  - `hashed_password` VARCHAR NOT NULL
-  - `created_at` TIMESTAMP WITH TIME ZONE DEFAULT now()
-  - `updated_at` TIMESTAMP WITH TIME ZONE DEFAULT now()
+- Hereda de `AbstractActive` (campos: `id: UUID`, `created_at`, `updated_at`, `is_active`, `deleted_at`).
+- Campos principales:
+
+  - `email: EmailStr` — índice y único (no nulo)
+  - `name: str | None`
+  - `surname: str | None`
+  - `hashed_password: str` — requerido
+  - `role: enum Roles` — valores: `owner`, `admin`, `moderator`
+  - `owner_id: UUID | None` — clave foránea auto-referencial (`foreign_key='user.id'`) usada para multitenancy (si un usuario pertenece a un tenant se guarda el `owner_id` del propietario)
+
+- Relaciones:
+
+  - `testimonials` (1:N)
+  - `api_keys` (1:N)
 
 - Índices recomendados:
+  - `UNIQUE(email)`
+  - `index(is_active)` si se filtra por usuarios activos
 
-  - UNIQUE(email)
-  - index on `is_active` if queries filter by active users
+### 2) `APIKey` (tabla `api_key`)
 
-- Comentarios:
-  - `roles` puede almacenarse como arreglo JSONB o table normalizada si se requiere consultas complejas.
+- Hereda de `AbstractActive`.
+- Campos principales:
 
----
+  - `name: str | None` — nombre humano opcional
+  - `prefix: str` — prefix del token, índice para lookup rápido
+  - `secret_digest: str` — digest HMAC/SHA del token
+  - `revoked: bool`
+  - `user_id: UUID | None` — FK a `user.id` (ondelete=SET NULL)
 
-### 2) categories
+- Uso: almacenar claves de API por tenant/usuario, comparar `prefix` y verificar digest.
 
-- Nombre de tabla: `categories`
-- Columnas principales:
+### 3) `Category` (tabla `category`)
 
-  - `id` UUID PRIMARY KEY
-  - `name` VARCHAR NOT NULL
-  - `slug` VARCHAR UNIQUE NOT NULL
-  - `created_at`, `updated_at` TIMESTAMP
+- Hereda de `Abstract` (no soft-delete).
+- Campos principales:
+
+  - `name: str` — indexado
+  - `slug: str` — indexado y único
+
+- Relaciones:
+  - `testimonials` (1:N)
+
+### 4) `Tag` (tabla `tag`)
+
+- Hereda de `Abstract`.
+- Campos principales:
+
+  - `name: str` — indexado y único
+  - `slug: str` — indexado y único
+
+- Relaciones:
+  - many-to-many con `Testimonial` a través de `TestimonialTagLink`
+
+### 5) `Testimonial` (tabla `testimonial`)
+
+- Hereda de `AbstractActive`.
+- Campos principales:
+
+  - `product_id: str` — identificador del producto (no necesariamente UUID)
+  - `product_name: str`
+  - `title: str | None`
+  - `content: str | None`
+  - `youtube_url: str | None`
+  - `image_url: list[str]` — almacenado como columna JSON en la BD (valor por defecto `[]`)
+  - `status: enum StatusType` — `pending`, `approved`, `rejected` (por defecto `pending`)
+  - `rating: int | None`
+  - `author_name: str | None`
+  - `user_id: UUID | None` — FK a `user.id` (ondelete=SET NULL)
+  - `category_id: UUID | None` — FK a `category.id` (ondelete=SET NULL)
+
+- Relaciones:
+
+  - `author` (User)
+  - `category` (Category)
+  - `tags` (many-to-many via `TestimonialTagLink`)
 
 - Índices recomendados:
-  - UNIQUE(slug)
-  - index(name)
+  - `index(status)`, `index(user_id)`, `index(category_id)`, `index(created_at)`
+
+### 6) `TestimonialTagLink` (tabla `testimonial_tag_link`)
+
+- Tabla de enlace many-to-many definida por `TestimonialTagLink`:
+  - `testimonial_id: UUID` — FK a `testimonial.id`
+  - `tag_id: UUID` — FK a `tag.id`
+  - PK compuesta: (`testimonial_id`, `tag_id`)
 
 ---
 
-### 3) tags
-
-- Nombre de tabla: `tags`
-- Columnas principales:
-
-  - `id` UUID PRIMARY KEY
-  - `name` VARCHAR NOT NULL
-  - `slug` VARCHAR UNIQUE NOT NULL
-
-- Índices:
-
-  - UNIQUE(slug)
-  - index(name)
-
-- Comentario:
-  - Los ejemplos actuales usan `int` para `tags.id`. Si se desea uniformidad, se puede migrar a `UUID` posteriormente (requerirá migración de datos y cambios en la tabla de asociación).
-
----
-
-### 4) testimonials
-
-- Nombre de tabla: `testimonials`
-- Columnas principales:
-
-  - `id` UUID PRIMARY KEY
-  - `title` VARCHAR(200) NOT NULL
-  - `content` TEXT NOT NULL
-  - `media_type` VARCHAR(10) NOT NULL CHECK (media_type IN ('text','image','video'))
-  - `media_url` VARCHAR(500) NULL
-  - `status` VARCHAR(10) NOT NULL CHECK (status IN ('pending','approved','rejected'))
-  - `views_count` INTEGER NOT NULL DEFAULT 0
-  - `author_id` UUID NOT NULL -- FK -> users(id)
-  - `category_id` UUID NULL -- FK -> categories(id)
-  - `created_at` TIMESTAMP WITH TIME ZONE DEFAULT now()
-  - `updated_at` TIMESTAMP WITH TIME ZONE DEFAULT now()
-  - `deleted_at` TIMESTAMP WITH TIME ZONE NULL -- soft delete
-
-- Índices recomendados:
-  - index(status)
-  - index(author_id)
-  - index(category_id)
-  - index(created_at)
-  - Full-text index over `title` + `content` (optional) for search
-
----
-
-### 5) testimonial_tags (tabla de asociación many-to-many)
-
-- Nombre de tabla: `testimonial_tags`
-- Columnas:
-  - `testimonial_id` UUID NOT NULL -- FK -> testimonials(id)
-  - `tag_id` INTEGER NOT NULL -- FK -> tags(id)
-- PK compuesta: (`testimonial_id`, `tag_id`)
-- Índices:
-  - PK compuesta actúa como índice para búsquedas por testimonial
-  - index(tag_id) para consultas por tag
-
----
-
-## Esquema SQL de ejemplo (Postgres)
+## Esquema SQL de ejemplo (Postgres) — ajustado a los modelos actuales
 
 ```sql
+-- Abstract/Utility: se asume que `id UUID` y timestamps se crean por Default en las clases base
+
 -- Users
-CREATE TABLE users (
+CREATE TABLE "user" (
   id UUID PRIMARY KEY,
   email VARCHAR(255) NOT NULL UNIQUE,
   name VARCHAR(255),
   surname VARCHAR(255),
-  is_active BOOLEAN DEFAULT TRUE,
-  roles JSONB,
   hashed_password VARCHAR(255) NOT NULL,
+  role VARCHAR(20) NOT NULL,
+  owner_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
+);
+
+-- API Keys
+CREATE TABLE api_key (
+  id UUID PRIMARY KEY,
+  name VARCHAR(50),
+  prefix VARCHAR(16) NOT NULL,
+  secret_digest VARCHAR(128) NOT NULL,
+  revoked BOOLEAN DEFAULT FALSE,
+  user_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Categories
-CREATE TABLE categories (
+CREATE TABLE category (
   id UUID PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   slug VARCHAR(255) NOT NULL UNIQUE,
@@ -203,34 +235,51 @@ CREATE TABLE categories (
 );
 
 -- Tags
-CREATE TABLE tags (
-  id SERIAL PRIMARY KEY,
-  name VARCHAR(100) NOT NULL,
-  slug VARCHAR(100) NOT NULL UNIQUE
+CREATE TABLE tag (
+  id UUID PRIMARY KEY,
+  name VARCHAR(255) NOT NULL UNIQUE,
+  slug VARCHAR(255) NOT NULL UNIQUE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );
 
 -- Testimonials
-CREATE TABLE testimonials (
+CREATE TABLE testimonial (
   id UUID PRIMARY KEY,
-  title VARCHAR(200) NOT NULL,
-  content TEXT NOT NULL,
-  media_type VARCHAR(10) NOT NULL,
-  media_url VARCHAR(500),
-  status VARCHAR(10) NOT NULL,
-  views_count INTEGER NOT NULL DEFAULT 0,
-  author_id UUID NOT NULL REFERENCES users(id),
-  category_id UUID REFERENCES categories(id),
+  product_id TEXT NOT NULL,
+  product_name TEXT NOT NULL,
+  title VARCHAR(200),
+  content TEXT,
+  youtube_url VARCHAR(500),
+  image_url JSONB DEFAULT '[]'::jsonb,
+  status VARCHAR(20) NOT NULL,
+  rating INTEGER,
+  author_name VARCHAR(255),
+  user_id UUID REFERENCES "user"(id) ON DELETE SET NULL,
+  category_id UUID REFERENCES category(id) ON DELETE SET NULL,
+  is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
   deleted_at TIMESTAMP WITH TIME ZONE
 );
 
 -- Association table
-CREATE TABLE testimonial_tags (
-  testimonial_id UUID NOT NULL REFERENCES testimonials(id),
-  tag_id INTEGER NOT NULL REFERENCES tags(id),
+CREATE TABLE testimonial_tag_link (
+  testimonial_id UUID NOT NULL REFERENCES testimonial(id) ON DELETE CASCADE,
+  tag_id UUID NOT NULL REFERENCES tag(id) ON DELETE CASCADE,
   PRIMARY KEY (testimonial_id, tag_id)
 );
 ```
+
+---
+
+## Comentarios y recomendaciones
+
+- `Tag.id` usa `UUID` (coherente con `Abstract`). Si ha habido datos previos con `SERIAL`, planificar migración.
+- `Testimonial.image_url` se guarda como `JSONB` y contiene una lista de URLs (strings). Esto facilita múltiples imágenes por testimonial.
+- `User.owner_id` es una FK auto-referencial útil para multitenancy — asegura que administradores se asocien al `owner` del tenant.
+- `APIKey` guarda solo `secret_digest` y `prefix` para permitir revocación y búsqueda segura.
+- Considerar índices GIN en `image_url` si se hacen búsquedas dentro del JSON (no usual).
+- Añadir triggers o políticas para actualizar `updated_at` automáticamente (ya existe comportamiento en modelos via SQLModel sa_column_kwargs).
 
 ---
