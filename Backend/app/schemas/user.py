@@ -32,8 +32,10 @@ class UserCreate(SQLModel):
         return v
 
 
-class UserLogin(UserCreate):
-    pass
+class UserCreateInternal(UserCreate):
+    name: str | None = Field(default=None, min_length=2, max_length=50)
+    surname: str | None = Field(default=None, min_length=2, max_length=50)
+    role: Roles = Field(default=Roles.MODERATOR)
 
 
 class UserUpdate(SQLModel):
@@ -43,10 +45,11 @@ class UserUpdate(SQLModel):
 
 
 class AdminUserUpdate(UserUpdate):
-    role: Roles | None = Field(default=Roles.MODERATOR)
+    role: Roles | None = Field(default=None)
 
 
 class UserResponse(UserUpdate):
     id: UUID
+    role: Roles
     created_at: datetime
     updated_at: datetime
