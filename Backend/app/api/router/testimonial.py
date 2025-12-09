@@ -31,13 +31,16 @@ router = APIRouter(
 )
 def upload_images(
     api_key: APIKeyPublicDep,
-    images: list[UploadFile] = File(..., description="Images to upload (max 5)"),
+    images: list[UploadFile] | None = File(default=None, description="Images to upload (max 5)"),
 ):
     """Upload images to Cloudinary and return their secure URLs.
 
     Use this endpoint before creating a testimonial to get image URLs.
     Then include those URLs in the `media.image_url` field when creating the testimonial.
     """
+    if not images:
+        return {"image_url": []}
+
     if len(images) > 5:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
