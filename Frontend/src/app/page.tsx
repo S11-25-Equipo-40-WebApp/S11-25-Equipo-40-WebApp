@@ -8,13 +8,23 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Checkbox } from "@/components/ui/checkbox"
 
+const RequirementItem = ({ met, text }: { met: boolean; text: string }) => (
+  <div className="flex items-center gap-2 text-sm">
+    <div className={`w-4 h-4 rounded-full flex items-center justify-center ${met ? 'bg-green-500' : 'bg-gray-600'}`}>
+      {met && <span className="text-white text-xs">✓</span>}
+    </div>
+    <span className={met ? 'text-green-400' : 'text-gray-400'}>
+      {text}
+    </span>
+  </div>
+)
+
 export default function HomePage() {
   // Estados para login
   const [loginEmail, setLoginEmail] = useState("")
   const [loginPassword, setLoginPassword] = useState("")
 
   // Estados para registro
-  const [nombre, setNombre] = useState("")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
@@ -23,9 +33,28 @@ export default function HomePage() {
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
 
+  // Validación de contraseña
+  const validatePassword = (pwd: string)=> {
+    return {
+      hasLower: /[a-z]/.test(pwd),
+      hasUpper: /[A-Z]/.test(pwd),
+      hasNumber: /\d/.test(pwd),
+      hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(pwd),
+      isLongEnough: pwd.length >= 8
+    }
+  }
+
+  const passwordRequirements = validatePassword(password)
+  const isPasswordValid = Object.values(passwordRequirements).every(v => v)
+
   const handleRegister = async () => {
     setError("")
     setSuccess("")
+
+    if (!isPasswordValid) {
+      setError("La contraseña no cumple con todos los requisitos")
+      return
+    }
 
     if (password !== confirmPassword) {
       setError("Las contraseñas no coinciden")
@@ -39,16 +68,16 @@ export default function HomePage() {
         body: JSON.stringify({ email, password })
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        setError(data.message || "Error al registrar")
-        return
+      if (res.ok) {
+        setSuccess("Registro exitoso. Inicia sesión para continuar.")
+        setEmail("")
+        setPassword("")
+        setConfirmPassword("")
+      } else {
+        setError("Error en el registro. Intenta nuevamente.")
       }
-
-      const data = await res.json()
-      setSuccess(`¡Registro exitoso! Bienvenido ${data.name || nombre}`)
-    } catch (err) {
-      setError("Error de conexión con el servidor")
+    } catch (_err) {
+      setError("Error de conexión. Intenta nuevamente."+ _err)
     }
   }
 
@@ -109,21 +138,13 @@ export default function HomePage() {
                   </Label>
                 </div>
 
-                <Button className="bg-(--color-blue-btn) hover:bg-blue-700 transition w-full mt-2">
+                <Button className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2">
                   Ingresar
                 </Button>
               </TabsContent>
 
               {/* REGISTER */}
               <TabsContent value="register" className="space-y-4">
-                <div>
-                  <Label htmlFor="nombre" className="text-gray-300 p-1">Nombre Completo</Label>
-                  <Input id="nombre" type="text" placeholder="Tu nombre"
-                    className="text-gray-300"
-                    value={nombre}
-                    onChange={e => setNombre(e.target.value)} />
-                </div>
-
                 <div>
                   <Label htmlFor="emailReg" className="text-gray-300 p-1">Correo Electrónico</Label>
                   <Input id="emailReg" type="email" placeholder="tucorreo@ejemplo.com"
@@ -138,6 +159,17 @@ export default function HomePage() {
                     className="text-gray-300"
                     value={password}
                     onChange={e => setPassword(e.target.value)} />
+                  
+                  {/* muestra al usuario los requerimmentos de la contraseña */}
+                  {password && (
+                    <div className="mt-3 p-3 bg-gray-700 rounded-lg space-y-2">
+                      <RequirementItem met={passwordRequirements.hasLower} text="Letra minúscula (a-z)" />
+                      <RequirementItem met={passwordRequirements.hasUpper} text="Letra mayúscula (A-Z)" />
+                      <RequirementItem met={passwordRequirements.hasNumber} text="Número (0-9)" />
+                      <RequirementItem met={passwordRequirements.hasSpecial} text="Carácter especial (!@#$%^&*)" />
+                      <RequirementItem met={passwordRequirements.isLongEnough} text="Mínimo 8 caracteres" />
+                    </div>
+                  )}
                 </div>
 
                 <div>
@@ -146,11 +178,19 @@ export default function HomePage() {
                     className="text-gray-300"
                     value={confirmPassword}
                     onChange={e => setConfirmPassword(e.target.value)} />
+                  
+                  {confirmPassword && password !== confirmPassword && (
+                    <p className="text-red-400 text-sm mt-1">Las contraseñas no coinciden</p>
+                  )}
+                  {confirmPassword && password === confirmPassword && (
+                    <p className="text-green-400 text-sm mt-1">✓ Las contraseñas coinciden</p>
+                  )}
                 </div>
 
                 <Button
-                  className="bg-(--color-blue-btn) hover:bg-blue-700 transition w-full mt-2"
+                  className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                   onClick={handleRegister}
+                  disabled={!isPasswordValid || password !== confirmPassword}
                 >
                   Registrarse
                 </Button>
