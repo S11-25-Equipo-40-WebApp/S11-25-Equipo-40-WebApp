@@ -5,6 +5,12 @@ from uuid import UUID
 from pydantic import HttpUrl, field_validator, model_serializer
 from sqlmodel import Field, SQLModel
 
+from app.models.testimonial import StatusType
+
+
+class TestimonialStatusUpdate(SQLModel):
+    status: StatusType
+
 
 class TestimonialProduct(SQLModel):
     id: str = Field(min_length=1, max_length=100)
@@ -43,9 +49,13 @@ class TestimonialCreate(SQLModel):
     content: TestimonialContent | None = None
     media: TestimonialMedia | None = None
 
+    category_name: str | None = None
+    tags: list[str] | None = None
+
 
 class TestimonialResponse(SQLModel):
     id: UUID
+    status: StatusType
     created_at: datetime
     updated_at: datetime
 
@@ -60,10 +70,14 @@ class TestimonialResponse(SQLModel):
     youtube_url: str | None = None
     image_url: list[str] | None = None
 
+    category_name: str | None = None
+    tags: list[str] | None = None
+
     @model_serializer()
     def to_response(self):
         return {
             "id": self.id,
+            "status": self.status,
             "product": {
                 "id": self.product_id,
                 "name": self.product_name,
@@ -82,6 +96,8 @@ class TestimonialResponse(SQLModel):
             }
             if self.youtube_url or self.image_url
             else None,
+            "category": self.category_name if self.category_name else None,
+            "tags": self.tags if self.tags else None,
             "created_at": self.created_at,
             "updated_at": self.updated_at,
         }
@@ -89,4 +105,5 @@ class TestimonialResponse(SQLModel):
 
 class TestimonialUpdate(SQLModel):
     content: TestimonialContent | None = None
-    media: TestimonialMedia | None = None
+    category_name: str | None = None
+    tags: list[str] | None = None

@@ -9,6 +9,7 @@ from sqlmodel import Field, Relationship
 from .abstract import AbstractActive
 
 if TYPE_CHECKING:
+    from .api_key import APIKey
     from .testimonial import Testimonial
 
 
@@ -33,3 +34,4 @@ class User(AbstractActive, table=True):
 
     # relationships
     testimonials: list["Testimonial"] = Relationship(back_populates="author")
+    api_keys: list["APIKey"] = Relationship(back_populates="user")

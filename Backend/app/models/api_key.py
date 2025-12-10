@@ -1,8 +1,12 @@
+from typing import TYPE_CHECKING, Optional
 from uuid import UUID
 
-from sqlmodel import Field
+from sqlmodel import Field, Relationship
 
 from .abstract import AbstractActive
+
+if TYPE_CHECKING:
+    from .user import User
 
 
 class APIKey(AbstractActive, table=True):
@@ -20,5 +24,8 @@ class APIKey(AbstractActive, table=True):
     secret_digest: str = Field(max_length=128)
     revoked: bool = Field(default=False)
 
-    # Foreing key
+    # Foreign key
     user_id: UUID | None = Field(default=None, foreign_key="user.id", ondelete="SET NULL")
+
+    # Relationship
+    user: Optional["User"] = Relationship(back_populates="api_keys")
