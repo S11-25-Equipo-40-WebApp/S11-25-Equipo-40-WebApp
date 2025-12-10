@@ -1,4 +1,3 @@
-import secrets
 from typing import Annotated, Any
 
 from pydantic import AnyUrl, BeforeValidator, PostgresDsn, computed_field
@@ -16,9 +15,9 @@ def parse_cors(v: Any) -> list[str] | str:
 class Settings(BaseSettings):
     API: str = "/api"
     PROJECT_NAME: str = "Testify Backend"
-    SECRET_KEY: str = secrets.token_urlsafe(32)
-    REFRESH_SECRET_KEY: str = secrets.token_urlsafe(32)
-    API_KEY_SECRET: str = secrets.token_urlsafe(48)
+    SECRET_KEY: str = "dev-secret-key-change-in-production"
+    REFRESH_SECRET_KEY: str = "dev-refresh-secret-key-change-in-production"
+    API_KEY_SECRET: str = "dev-api-key-secret-change-in-production-use-48-chars-minimum"
     API_KEY_DISPLAY_PREFIX: str = "sk-proj-"
     API_KEY_PREFIX_BODY_CHARS: int = 8
     ALGORITHM: str = "HS256"
@@ -49,11 +48,11 @@ class Settings(BaseSettings):
         return 30  # 30 days in development
 
     # postgres
-    POSTGRES_SERVER: str
+    POSTGRES_SERVER: str = "localhost"
     POSTGRES_PORT: int = 5432
-    POSTGRES_USER: str
-    POSTGRES_PASSWORD: str
-    POSTGRES_DB: str
+    POSTGRES_USER: str = "postgres"
+    POSTGRES_PASSWORD: str = "postgres"
+    POSTGRES_DB: str = "test_db"
 
     @computed_field  # type: ignore[prop-decorator]
     @property
@@ -74,6 +73,10 @@ class Settings(BaseSettings):
         return [str(origin).rstrip("/") for origin in self.BACKEND_CORS_ORIGINS]
 
     model_config = SettingsConfigDict(env_file=".env")
+
+    CLOUDINARY_CLOUD_NAME: str = ""
+    CLOUDINARY_API_KEY: str = ""
+    CLOUDINARY_API_SECRET: str = ""
 
 
 settings = Settings()

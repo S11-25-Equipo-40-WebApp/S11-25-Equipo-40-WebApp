@@ -20,11 +20,11 @@ class TagCreate(SQLModel):
         return self
 
 
-class TagResponse(TagCreate):
-    id: UUID = Field(description="The unique identifier of the tag")
-    slug: str = Field(description="URL-friendly version of the tag name")
+class TagResponse(SQLModel):
+    id: UUID
+    name: str
+    slug: str
     created_at: datetime
-    updated_at: datetime
 
 
 class TagUpdate(SQLModel):

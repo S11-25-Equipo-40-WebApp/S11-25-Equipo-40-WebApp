@@ -1,14 +1,17 @@
 from typing import Annotated
 
 from fastapi import Depends, HTTPException, status
+from fastapi.params import Header
 from fastapi.security import OAuth2PasswordBearer
 from jose import jwt
 from jose.exceptions import ExpiredSignatureError, JWTError
 from sqlmodel import Session
 
 from app.core.config import settings
-from app.core.db import get_session
+from app.core.db import SessionDep, get_session
+from app.models.api_key import APIKey
 from app.models.user import Roles, User
+from app.services.api_keys import APIKeyService
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl=settings.API + "/auth/login")
 
@@ -104,6 +107,24 @@ def require_moderator(current_user: User = Depends(get_current_user)):
     return current_user
 
 
+def get_api_key_public(
+    db: SessionDep,
+    x_api_key: str = Header(..., alias="X-API-Key"),  # type: ignore
+) -> APIKey:
+    """
+    Validate API key for public endpoints.
+    Does NOT require an authenticated user.
+    """
+    api_key = APIKeyService.verify_api_key(db, x_api_key)
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid or missing API Key.",
+        )
+    return api_key
+
+
 OwnerDep = Annotated[User, Depends(require_owner)]
 AdminDep = Annotated[User, Depends(require_admin)]
 ModeratorDep = Annotated[User, Depends(require_moderator)]
+APIKeyPublicDep = Annotated[APIKey, Depends(get_api_key_public)]

@@ -17,6 +17,7 @@ dependencies = [
     "slowapi>=0.1.9",
     "sqlmodel>=0.0.27",
     "unidecode>=1.4.0",
+    "cloudinary>=1.44.1",
 ]
 
 [dependency-groups]

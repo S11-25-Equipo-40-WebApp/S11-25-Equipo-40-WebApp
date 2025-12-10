@@ -20,11 +20,11 @@ class CategoryCreate(SQLModel):
         return self
 
 
-class CategoryResponse(CategoryCreate):
+class CategoryResponse(SQLModel):
     id: UUID
-    slug: str = Field(description="URL-friendly version of the category name")
+    name: str
+    slug: str
     created_at: datetime
-    updated_at: datetime
 
 
 class CategoryUpdate(SQLModel):
