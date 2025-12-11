@@ -1,0 +1,33 @@
+🐛 Bug Report — TC003
+Error al registrarme con e-mail incorrecto
+📌 ID del Caso
+
+TC003
+🧪 Título
+Registrarme con e-mail incorrecto.
+
+📂 Módulo
+UI – Registrarme para inicio de sesión
+📝 Descripción del Bug
+
+El sistema permite avanzar o no muestra el mensaje de error cuando el usuario ingresa un correo electrónico con formato incorrecto.
+▶️ Pasos para Reproducir
+Abrir la pantalla Registrarse.
+Completar todos los campos con un e-mail inválido, ejemplo:
+ceda_4@hotmail.commmmmmmmmmmmmmmm
+Hacer clic en el botón Registrarse.
+
+✅ Resultado Esperado
+El sistema debe mostrar un mensaje de error bajo el campo de e-mail indicando:
+“El correo electrónico es incorrecto”
+
+❌ Resultado Obtenido
+El sistema no muestra ningún mensaje de validación y permite continuar / devuelve error no controlado (dependiendo de lo que observaste).
+(Si quieres lo personalizo exactamente según lo que ocurrió en tu sistema.)
+
+🚦 Estado
+No aprobado
+
+🔥 Severidad
+Alta
+Impacta la validación del formulario y puede provocar usuarios registrados con datos inválidos.
