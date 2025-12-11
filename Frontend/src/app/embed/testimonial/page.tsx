@@ -153,7 +153,7 @@ export default function EmbedTestimonialPage() {
           tags: selectedTags.length ? selectedTags : ["embed", "testimonial"],
         }),
       })
-
+      console.log("DEBUG: POST ->", `${API_URL}/testimonials`)
       if (!res.ok) {
         throw new Error("Error del backend al crear testimonio")
       }

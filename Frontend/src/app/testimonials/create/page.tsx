@@ -120,6 +120,10 @@ export default function EmbedTestimonialPage() {
 
         const uploadRes = await fetch(`${API_URL}/testimonials/upload-images`, {
           method: "POST",
+          headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": API_KEY,
+        },
           body: formData,
         })
 
