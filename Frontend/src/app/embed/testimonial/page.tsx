@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
@@ -26,6 +26,22 @@ export default function EmbedTestimonialPage() {
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [category, setCategory] = useState("")
+  const [tag, setTag] = useState("")
+
+  // nuevos estados para listas y selección múltiple de tags
+  const [categoriesList, setCategoriesList] = useState<string[]>([])
+  const [tagsList, setTagsList] = useState<string[]>([])
+  const [selectedTags, setSelectedTags] = useState<string[]>([])
+
+  // estados para permitir escribir categoría personalizada y añadir tags manualmente
+  const [customCategory, setCustomCategory] = useState<string>("")
+  const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false)
+  const [tagInput, setTagInput] = useState<string>("")
+
+  // loading flags para evitar interacción hasta traer datos
+  const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true)
+  const [tagsLoading, setTagsLoading] = useState<boolean>(true)
 
   const [images, setImages] = useState<File[]>([])
 
@@ -35,6 +51,43 @@ export default function EmbedTestimonialPage() {
     testimonial: "",
     videoUrl: "",
   })
+
+  // Cargar categorías y tags (endpoints específicos para embed) al montar el componente
+  useEffect(() => {
+    const load = async () => {
+      setCategoriesLoading(true)
+      setTagsLoading(true)
+      try {
+        const [cRes, tRes] = await Promise.all([
+          fetch(`${API_URL}/categories`),
+          fetch(`${API_URL}/tags`)
+        ])
+
+        if (cRes.ok) {
+          const cData = await cRes.json()
+          setCategoriesList(Array.isArray(cData) ? cData.map((i: any) => i?.name ?? i) : [])
+        } else {
+          setCategoriesList([])
+        }
+
+        if (tRes.ok) {
+          const tData = await tRes.json()
+          setTagsList(Array.isArray(tData) ? tData.map((i: any) => i?.name ?? i) : [])
+        } else {
+          setTagsList([])
+        }
+      } catch (err) {
+        console.error("Error cargando categorías/tags:", err)
+        setCategoriesList([])
+        setTagsList([])
+      } finally {
+        setCategoriesLoading(false)
+        setTagsLoading(false)
+      }
+    }
+
+    load()
+  }, [])
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -92,8 +145,8 @@ export default function EmbedTestimonialPage() {
             youtube_url: form.videoUrl || null,
             image_url: imageUrls,
           },
-          category_name: "embebido",
-          tags: ["embed", "testimonial"],
+          category_name: category || customCategory || "embebido",
+          tags: selectedTags.length ? selectedTags : ["embed", "testimonial"],
         }),
       })
 
@@ -118,9 +171,6 @@ export default function EmbedTestimonialPage() {
     }
   }
 
-  
-
-
   if (success) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
@@ -134,7 +184,6 @@ export default function EmbedTestimonialPage() {
     )
   }
 
- 
   return (
     <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
       <div className="w-full max-w-lg bg-gray-900 border border-gray-700 rounded-xl p-6">
@@ -182,6 +231,128 @@ export default function EmbedTestimonialPage() {
                 fill={rating >= star ? "#facc15" : "none"}
               />
             ))}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <Label>Categorías *</Label>
+          <div className="mt-1 flex gap-2 items-center">
+            <select
+              value={isCustomCategory ? "__other__" : category}
+              onChange={(e) => {
+                const v = e.target.value
+                if (v === "__other__") {
+                  setIsCustomCategory(true)
+                  setCategory("")
+                } else {
+                  setIsCustomCategory(false)
+                  setCategory(v)
+                  setCustomCategory("")
+                }
+              }}
+              disabled={categoriesLoading}
+              className="flex-1 bg-gray-800 border-gray-700 p-2 rounded disabled:opacity-60"
+            >
+              <option value="">
+                {categoriesLoading ? "Cargando categorías..." : "Selecciona una categoría"}
+              </option>
+              {categoriesList.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+              <option value="__other__">Otra...</option>
+            </select>
+            {isCustomCategory && (
+              <input
+                type="text"
+                placeholder="Escribe la categoría"
+                value={customCategory}
+                onChange={(e) => setCustomCategory(e.target.value)}
+                className="bg-gray-800 border border-gray-700 p-2 rounded flex-1"
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="mb-4">
+          <Label>Tags</Label>
+          <div className="mt-2">
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                placeholder={tagsLoading ? "Cargando tags..." : "Añadir tag y presiona Enter"}
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault()
+                    const v = tagInput.trim()
+                    if (v && !selectedTags.includes(v)) {
+                      setSelectedTags((s) => [...s, v])
+                    }
+                    setTagInput("")
+                  }
+                }}
+                disabled={tagsLoading}
+                className="flex-1 bg-gray-800 border border-gray-700 p-2 rounded disabled:opacity-60"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  const v = tagInput.trim()
+                  if (v && !selectedTags.includes(v)) {
+                    setSelectedTags((s) => [...s, v])
+                  }
+                  setTagInput("")
+                }}
+                disabled={tagsLoading}
+                className="bg-blue-600 px-3 py-2 rounded disabled:opacity-60"
+              >
+                Añadir
+              </button>
+            </div>
+
+            {/* click para añadir */}
+            <div className="flex flex-wrap gap-2 mb-3">
+              {tagsLoading ? (
+                <span className="text-sm text-gray-400">Cargando sugerencias...</span>
+              ) : (
+                tagsList
+                  .filter((t) => !selectedTags.includes(t))
+                  .slice(0, 10)
+                  .map((t) => (
+                    <button
+                      key={t}
+                      type="button"
+                      onClick={() => setSelectedTags((s) => (s.includes(t) ? s : [...s, t]))}
+                      className="text-sm px-2 py-1 rounded bg-gray-800 hover:bg-gray-700"
+                    >
+                      {t}
+                    </button>
+                  ))
+              )}
+            </div>
+
+            {/* Tags seleccionados */}
+            <div className="flex flex-wrap gap-2">
+              {selectedTags.map((t) => (
+                <span
+                  key={t}
+                  className="flex items-center gap-2 bg-blue-600 text-white px-2 py-1 rounded text-sm"
+                >
+                  {t}
+                  <button
+                    type="button"
+                    onClick={() => setSelectedTags((s) => s.filter((x) => x !== t))}
+                    className="ml-1 text-xs px-1"
+                    aria-label={`Eliminar ${t}`}
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
           </div>
         </div>
 
