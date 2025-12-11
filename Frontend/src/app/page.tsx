@@ -29,6 +29,9 @@ export default function HomePage() {
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
 
+  // estado para aceptar los terminos y condiciones
+  const [acceptTerms, setAcceptTerms] = useState(false)
+
   // Feedback
   const [error, setError] = useState("")
   const [success, setSuccess] = useState("")
@@ -166,12 +169,7 @@ export default function HomePage() {
                   ¿Olvidaste tu contraseña?
                 </a>
 
-                <div className="flex items-center space-x-2">
-                  <Checkbox id="terms" />
-                  <Label htmlFor="terms" className="text-gray-300">
-                    Acepto los <a href="#" className="text-blue-400 hover:underline">Términos y Condiciones</a>
-                  </Label>
-                </div>
+              
 
                 <Button className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2" onClick={handleLogin}>
                   Ingresar
@@ -222,13 +220,24 @@ export default function HomePage() {
                   )}
                 </div>
 
-                <Button
-                  className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                  onClick={handleRegister}
-                  disabled={!isPasswordValid || password !== confirmPassword}
-                >
-                  Registrarse
-                </Button>
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                      id="terms"
+                      checked={acceptTerms}
+                      onCheckedChange={(value) => setAcceptTerms(Boolean(value))}
+                    />
+                    <Label htmlFor="terms" className="text-gray-300">
+                      Acepto los <a href="#" className="text-blue-400 hover:underline">Términos y Condiciones</a>
+                    </Label>
+                  </div>
+
+                  <Button
+                    className="bg-blue-600 hover:bg-blue-700 transition w-full mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    onClick={handleRegister}
+                    disabled={!isPasswordValid || password !== confirmPassword || !acceptTerms}
+                  >
+                    Registrarse
+                  </Button>
 
                 {error && <p className="text-red-500 text-sm">{error}</p>}
                 {success && <p className="text-green-500 text-sm">{success}</p>}
