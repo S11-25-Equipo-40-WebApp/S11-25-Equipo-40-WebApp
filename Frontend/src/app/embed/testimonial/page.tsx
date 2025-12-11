@@ -5,10 +5,11 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
-import { Star } from "lucide-react"
+import { Star } from "lucide-react
 
-const API_URL =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL!
+const API_KEY = process.env.NEXT_PUBLIC_API_KEY!
 
 const PRODUCTS = [
   { id: "prd-react", name: "Curso React Básico" },
@@ -132,7 +133,10 @@ export default function EmbedTestimonialPage() {
       /* ---------------- aki se estan creando los testimonios ---------------- */
       const res = await fetch(`${API_URL}/testimonials`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          "X-API-Key": API_KEY,
+        },
         body: JSON.stringify({
           product,
           content: {
