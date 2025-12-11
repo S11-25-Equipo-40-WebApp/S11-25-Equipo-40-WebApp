@@ -12,7 +12,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog"
-import { Search, Trash2, Pencil, Copy } from "lucide-react"
+import { Search, Trash2, Pencil, Copy, Eye, EyeOff } from "lucide-react"
 
 type ApiKey = {
   id: string
@@ -23,9 +23,16 @@ type ApiKey = {
   raw_key?: string
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL
-const ADMIN_KEY = process.env.NEXT_PUBLIC_ADMIN_API_KEY
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://testify-dwtn.onrender.com/api"
 
+
+const getAuthHeaders = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { "Authorization": `Bearer ${token}` } : {})
+  }
+}
 export default function ApiKeysPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -40,16 +47,23 @@ export default function ApiKeysPage() {
   const loadApiKeys = async () => {
   try {
     setLoading(true)
+    
+    const res = await fetch(`${API_BASE}/api-keys`, {
+      headers: getAuthHeaders()
+    })
 
-    const res = await fetch(`${API_BASE}/api-keys`)
+    const respText = await res.text()
 
-    if (!res.ok) throw new Error("No se pudieron cargar las API keys")
+    if (!res.ok) {
+      throw new Error(`Error ${res.status}: ${respText}`)
+    }
 
-    const data: ApiKey[] = await res.json()
+    const data: ApiKey[] = JSON.parse(respText)
     setApiKeys(data)
+    setError(null)
 
   } catch (err) {
-    setError("Error cargando API Keys")
+    setError("Error cargando API Keys: " + (err instanceof Error ? err.message : "Desconocido"))
   } finally {
     setLoading(false)
   }
@@ -65,26 +79,31 @@ export default function ApiKeysPage() {
 
 
   const handleCreate = async () => {
-  try {
+  if (!keyName.trim()) {
+    setError("El nombre es requerido")
+    return
+  }
 
+  try {
+    setError(null)
     const res = await fetch(`${API_BASE}/api-keys`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ name: keyName })
     })
 
-    if (!res.ok) throw new Error("No se pudo crear la API Key")
+    const respText = await res.text()
+    if (!res.ok) {
+      throw new Error(`Error ${res.status}: ${respText}`)
+    }
 
-    const newKey = await res.json()
+    const newKey = JSON.parse(respText)
     setApiKeys([newKey, ...apiKeys])
-
     setKeyName("")
     setOpenCreate(false)
 
   } catch (err) {
-    alert("Error creando API Key")
+    setError("Error: " + (err instanceof Error ? err.message : "Desconocido"))
   }
 }
 
