@@ -4,7 +4,7 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import {
   Dialog,
   DialogContent,
@@ -13,6 +13,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog"
 import { Search, Trash2, Pencil, Copy, Eye, EyeOff } from "lucide-react"
+import { useAuth } from "@/hooks/useAuth"
 
 type ApiKey = {
   id: string
@@ -25,15 +26,8 @@ type ApiKey = {
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "https://testify-dwtn.onrender.com/api"
 
-
-const getAuthHeaders = () => {
-  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-  return {
-    "Content-Type": "application/json",
-    ...(token ? { "Authorization": `Bearer ${token}` } : {})
-  }
-}
 export default function ApiKeysPage() {
+  const { getAuthHeaders } = useAuth()
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
@@ -44,7 +38,7 @@ export default function ApiKeysPage() {
   const [currentKey, setCurrentKey] = useState<ApiKey | null>(null)
   const [keyName, setKeyName] = useState("")
 
-  const loadApiKeys = async () => {
+  const loadApiKeys = useCallback(async () => {
   try {
     setLoading(true)
     
@@ -63,16 +57,17 @@ export default function ApiKeysPage() {
     setError(null)
 
   } catch (err) {
+    console.error(err)
     setError("Error cargando API Keys: " + (err instanceof Error ? err.message : "Desconocido"))
   } finally {
     setLoading(false)
   }
-}
+}, [getAuthHeaders])
 
 
   useEffect(() => {
     loadApiKeys()
-  }, [])
+  }, [loadApiKeys])
 
 
 

@@ -1,8 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import Image from 'next/image';
-import { Button } from '@/components/ui/button';
+
 
 export default function HomePage() {
   const [testimonials] = useState([
@@ -34,7 +33,10 @@ export default function HomePage() {
       image: '/testimonials/shoes.jpg'
     }
   ]);
-
+const handleCreateTestimonial = () => {
+    window.location.href = '/testimonials/create';
+  
+  }
   return (
     <main className="bg-gray-900 text-white min-h-screen">
       {/* Hero Section */}
@@ -46,7 +48,7 @@ export default function HomePage() {
           <p className="text-gray-400 mb-8 text-lg">
             Descubre lo que nuestros consumidores piensan de nuestros productos a través de sus auténticas experiencias.
           </p>
-          <button className="btn-primary bg-blue-500 rounded m-2 px-4 py-2">Comparte tu experiencia</button>
+          <button className="btn-primary bg-blue-500 rounded m-2 px-4 py-2 cursor-pointer hover:bg-blue-600" onClick={handleCreateTestimonial}>Comparte tu experiencia</button>
         </div>
         <div className="flex-1">
           <div className="bg-gradient-to-br from-cyan-400 to-purple-600 rounded-lg h-64 md:h-80"></div>

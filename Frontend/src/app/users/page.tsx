@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Search, Trash2, Pencil } from "lucide-react";
 import { ReactNode, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
+import { useAuth } from "@/hooks/useAuth";
 
 import {
   Dialog,
@@ -51,13 +52,7 @@ export default function UsuariosPage() {
   const [openCreateModal, setOpenCreateModal] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
   
-  const getAuthHeaders = () => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-    return {
-      "Content-Type": "application/json",
-      ...(token ? { "Authorization": `Bearer ${token}` } : {})
-    }
-  }
+  const { getAuthHeaders } = useAuth();
   
   const [form, setForm] = useState({
     name: "",
@@ -100,7 +95,7 @@ export default function UsuariosPage() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [getAuthHeaders]);
 
   useEffect(() => {
     fetchUsers();

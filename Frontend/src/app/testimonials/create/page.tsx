@@ -121,9 +121,8 @@ export default function EmbedTestimonialPage() {
         const uploadRes = await fetch(`${API_URL}/testimonials/upload-images`, {
           method: "POST",
           headers: {
-          "Content-Type": "application/json",
-          "X-API-Key": API_KEY,
-        },
+            "X-API-Key": API_KEY,
+          },
           body: formData,
         })
 
@@ -131,7 +130,8 @@ export default function EmbedTestimonialPage() {
           throw new Error("Error subiéndose las imágenes")
         }
 
-        imageUrls = await uploadRes.json()
+        const uploadedData = await uploadRes.json()
+        imageUrls = Array.isArray(uploadedData) ? uploadedData : (uploadedData.urls || [])
       }
 
       /* ---------------- aki se estan creando los testimonios ---------------- */
@@ -151,7 +151,7 @@ export default function EmbedTestimonialPage() {
           },
           media: {
             youtube_url: form.videoUrl || null,
-            image_url: imageUrls,
+            image_url: imageUrls && imageUrls.length > 0 ? imageUrls : [],
           },
           category_name: category || customCategory || "embebido",
           tags: selectedTags.length ? selectedTags : ["embed", "testimonial"],

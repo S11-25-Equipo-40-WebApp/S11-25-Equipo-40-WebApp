@@ -5,9 +5,10 @@ import { AppSidebar } from "@/components/Sidebar"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Search, Trash2, ThumbsUp } from "lucide-react"
-import { useState, useEffect, ChangeEvent } from "react"
+import { useState, useEffect, useCallback, ChangeEvent } from "react"
 import Image from "next/image"
 import Link from "next/link"
+import { useAuth } from "@/hooks/useAuth"
 
 interface Testimonial {
   id: string
@@ -20,7 +21,7 @@ interface Testimonial {
   avatar?: string
 }
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "https://testify-dwtn.onrender.com/api"
 
 export default function TestimonialsPage() {
   const [testimonials, setTestimonials] = useState<Testimonial[]>([])
@@ -30,35 +31,34 @@ export default function TestimonialsPage() {
   const [selectedStatus, setSelectedStatus] = useState<string>("all")
   const [selectedProduct, setSelectedProduct] = useState<string>("all")
   const [loading, setLoading] = useState<boolean>(true)
-  const [error, setError] = useState<string | null>(null)
 
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
   const itemsPerPage = 3
 
-  useEffect(() => {
-    fetchTestimonials()
-  }, [])
+  const { getAuthHeaders } = useAuth()
 
-  const fetchTestimonials = async () => {
+  const fetchTestimonials = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch(`${API_URL}/testimonials`)
+      const response = await fetch(`${API_URL}/testimonials`, {
+        headers: getAuthHeaders(),
+      })
       if (!response.ok) throw new Error("Error fetching testimonials")
 
       const data: Testimonial[] = await response.json()
       setTestimonials(data || [])
       setFilteredTestimonials(data || [])
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message)
-      } else {
-        setError("Error inesperado")
-      }
+      console.error(err)
     } finally {
       setLoading(false)
     }
-  }
+  }, [getAuthHeaders])
+
+  useEffect(() => {
+    fetchTestimonials()
+  }, [fetchTestimonials])
 
   useEffect(() => {
     let filtered = testimonials
@@ -101,7 +101,11 @@ export default function TestimonialsPage() {
 
   const handleSelectItem = (id: string) => {
     const newSelected = new Set(selectedIds)
-    newSelected.has(id) ? newSelected.delete(id) : newSelected.add(id)
+    if (newSelected.has(id)) {
+      newSelected.delete(id)
+    } else {
+      newSelected.add(id)
+    }
     setSelectedIds(newSelected)
   }
 
@@ -127,12 +131,13 @@ export default function TestimonialsPage() {
     fetchTestimonials()
   }
 
-  const totalPages = Math.ceil(filteredTestimonials.length / itemsPerPage)
+  const safeFilteredTestimonials = Array.isArray(filteredTestimonials) ? filteredTestimonials : []
+  const totalPages = Math.ceil(safeFilteredTestimonials.length / itemsPerPage)
   const startIdx = (currentPage - 1) * itemsPerPage
-  const paginatedTestimonials = filteredTestimonials.slice(startIdx, startIdx + itemsPerPage)
+  const paginatedTestimonials = safeFilteredTestimonials.slice(startIdx, startIdx + itemsPerPage)
 
-  const products = [...new Set(testimonials.map(t => t.product))]
-  const statuses = [...new Set(testimonials.map(t => t.status))]
+  const products = [...new Set((Array.isArray(testimonials) ? testimonials : []).map(t => t.product))]
+  const statuses = [...new Set((Array.isArray(testimonials) ? testimonials : []).map(t => t.status))]
 
   if (loading) {
     return (
@@ -252,7 +257,7 @@ export default function TestimonialsPage() {
             </div>
 
             <div className="flex justify-between items-center mt-6 text-sm text-gray-400">
-              <span>Mostrando {startIdx + 1}-{Math.min(startIdx + itemsPerPage, filteredTestimonials.length)} de {filteredTestimonials.length}</span>
+              <span>Mostrando {startIdx + 1}-{Math.min(startIdx + itemsPerPage, safeFilteredTestimonials.length)} de {safeFilteredTestimonials.length}</span>
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
