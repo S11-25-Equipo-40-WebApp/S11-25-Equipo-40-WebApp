@@ -1,112 +1,191 @@
-'use client'
+"use client";
 
-import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/Sidebar"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Search, Trash2, Pencil } from "lucide-react"
-import { useEffect, useState } from "react"
-import Image from "next/image"
+import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/Sidebar";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Search, Trash2, Pencil, UserCircle } from "lucide-react";
+import { ReactNode, useEffect, useState } from "react";
+import Image from "next/image";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001/api"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
+
+const API_URL = "https://testify-dwtn.onrender.com/api";
 
 interface User {
-  id: string
-  name: string
-  email: string
-  role: string
-  status: string
-  avatar: string
-  registerDate: string
+  registerDate: ReactNode;
+  id: string;
+  name: string;
+  surname: string;
+  email: string;
+  role: string;
+  is_active: boolean;
+  created_at: string;
+  avatar?: string;
 }
 
 export default function UsuariosPage() {
+  const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedRole, setSelectedRole] = useState("all");
+  const [selectedStatus, setSelectedStatus] = useState("all");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 4;
 
-  const [users, setUsers] = useState<User[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<User[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [selectedRole, setSelectedRole] = useState("all")
-  const [selectedStatus, setSelectedStatus] = useState("all")
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
-  const [currentPage, setCurrentPage] = useState(1)
-  const itemsPerPage = 4
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+  
+  const [openDeleteModal, setOpenDeleteModal] = useState(false);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [form, setForm] = useState({
+    name: "",
+    surname: "",
+    email: "",
+    password: "",
+    role: "moderator",
+  });
 
   useEffect(() => {
-    fetchUsers()
-  }, [])
+    fetchUsers();
+  }, []);
 
   const fetchUsers = async () => {
     try {
-      setLoading(true)
-      const res = await fetch(`${API_URL}/users`)
-      if (!res.ok) throw new Error("Error obteniendo usuarios")
-      const data: User[] = await res.json()
+      setLoading(true);
 
-      setUsers(data)
-      setFilteredUsers(data)
+      const res = await fetch(`${API_URL}/users`);
+      if (!res.ok) throw new Error("Error obteniendo usuarios");
+
+      const data = await res.json();
+
+      const mapped = data.map((u: User) => ({
+        ...u,
+        status: u.is_active ? "Activo" : "Inactivo",
+        registerDate: new Date(u.created_at).toLocaleDateString("es-MX"),
+        avatar:
+          u.avatar ||
+          "https://cdn-icons-png.flaticon.com/512/3177/3177440.png", 
+      }));
+
+      setUsers(mapped);
+      setFilteredUsers(mapped);
     } catch (err) {
-      if (err instanceof Error) {
-        setError(err.message)
-      }
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   useEffect(() => {
-    let filtered = users
+    let filtered = users;
 
     if (searchTerm) {
-      filtered = filtered.filter(u =>
-        u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        u.email.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      filtered = filtered.filter(
+        (u) =>
+          u.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+          u.email.toLowerCase().includes(searchTerm.toLowerCase())
+      );
     }
 
     if (selectedRole !== "all") {
-      filtered = filtered.filter(u => u.role === selectedRole)
+      filtered = filtered.filter((u) => u.role === selectedRole);
     }
 
     if (selectedStatus !== "all") {
-      filtered = filtered.filter(u => u.status === selectedStatus)
+      filtered = filtered.filter(
+        (u) =>
+          (selectedStatus === "Activo" && u.is_active) ||
+          (selectedStatus === "Inactivo" && !u.is_active)
+      );
     }
 
-    setFilteredUsers(filtered)
-    setCurrentPage(1)
-  }, [searchTerm, selectedRole, selectedStatus, users])
+    setFilteredUsers(filtered);
+    setCurrentPage(1);
+  }, [searchTerm, selectedRole, selectedStatus, users]);
 
-
+  
   const paginated = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
     currentPage * itemsPerPage
-  )
+  );
+
+  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
-      const ids = new Set(paginated.map(u => u.id))
-      setSelectedIds(ids)
+      setSelectedIds(new Set(paginated.map((u) => u.id)));
     } else {
-      setSelectedIds(new Set())
+      setSelectedIds(new Set());
     }
-  }
+  };
 
   const handleSelectItem = (id: string) => {
-    const updated = new Set(selectedIds)
-    updated.has(id) ? updated.delete(id) : updated.add(id)
-    setSelectedIds(updated)
-  }
+    const updated = new Set(selectedIds);
+    updated.has(id) ? updated.delete(id) : updated.add(id);
+    setSelectedIds(updated);
+  };
 
-  const totalPages = Math.ceil(filteredUsers.length / itemsPerPage)
+  const createUser = async () => {
+    const res = await fetch(`${API_URL}/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(form),
+    });
+
+    if (!res.ok) {
+      alert("Error creando usuario");
+      return;
+    }
+
+    setOpenCreateModal(false);
+    setForm({
+      name: "",
+      surname: "",
+      email: "",
+      password: "",
+      role: "moderator",
+    });
+
+    fetchUsers();
+  };
+
+  
+  const deleteUser = async () => {
+    if (!deleteId) return;
+
+    const res = await fetch(`${API_URL}/users/${deleteId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ is_active: false }),
+    });
+
+    if (!res.ok) {
+      alert("Error eliminando usuario");
+      return;
+    }
+
+    setOpenDeleteModal(false);
+    setDeleteId(null);
+    fetchUsers();
+  };
 
   if (loading) {
     return (
       <div className="flex min-h-screen w-full bg-[#0f172a] text-white items-center justify-center">
         Cargando...
       </div>
-    )
+    );
   }
 
   return (
@@ -116,14 +195,18 @@ export default function UsuariosPage() {
 
         <SidebarInset className="bg-[#0f172a]">
           <div className="p-8">
-
+            {/* HEADER */}
             <div className="flex justify-between items-center mb-6">
               <h1 className="text-3xl font-bold">Gestión de Usuarios</h1>
-              <Button className="bg-blue-600 hover:bg-blue-700">
+              <Button
+                className="bg-blue-600 hover:bg-blue-700"
+                onClick={() => setOpenCreateModal(true)}
+              >
                 + Añadir Nuevo Usuario
               </Button>
             </div>
 
+          
             <div className="flex gap-4 mb-6">
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
@@ -141,8 +224,8 @@ export default function UsuariosPage() {
                 onChange={(e) => setSelectedRole(e.target.value)}
               >
                 <option value="all">Rol: Todos</option>
-                <option value="Administrador">Administrador</option>
-                <option value="Usuario">Usuario</option>
+                <option value="owner">Administrador</option>
+                <option value="moderator">Usuario</option>
               </select>
 
               <select
@@ -158,7 +241,9 @@ export default function UsuariosPage() {
 
             <div className="border border-gray-700 rounded-lg overflow-hidden">
               <div className="bg-gray-900 border-b border-gray-700 px-6 py-4 grid grid-cols-12 gap-4">
-                <div><input type="checkbox" onChange={handleSelectAll} /></div>
+                <div>
+                  <input type="checkbox" onChange={handleSelectAll} />
+                </div>
                 <div className="col-span-3 font-semibold">Nombre de Usuario</div>
                 <div className="col-span-2 font-semibold">Rol</div>
                 <div className="col-span-3 font-semibold">Fecha Registro</div>
@@ -166,7 +251,7 @@ export default function UsuariosPage() {
                 <div className="col-span-1 font-semibold">Acciones</div>
               </div>
 
-              {paginated.map(u => (
+              {paginated.map((u) => (
                 <div
                   key={u.id}
                   className="grid grid-cols-12 gap-4 px-6 py-4 border-b border-gray-700 hover:bg-gray-900/50 items-center"
@@ -181,7 +266,7 @@ export default function UsuariosPage() {
 
                   <div className="col-span-3 flex gap-3 items-center">
                     <Image
-                      src={u.avatar}
+                      src={u.avatar || "/default-avatar.png"}
                       width={40}
                       height={40}
                       alt={u.name}
@@ -194,9 +279,13 @@ export default function UsuariosPage() {
                   </div>
 
                   <div className="col-span-2">
-                    <span className={`px-3 py-1 rounded text-sm ${
-                      u.role === "Administrador" ? "bg-blue-600" : "bg-gray-700"
-                    }`}>
+                    <span
+                      className={`px-3 py-1 rounded text-sm ${
+                        u.role === "owner"
+                          ? "bg-blue-600"
+                          : "bg-gray-700"
+                      }`}
+                    >
                       {u.role}
                     </span>
                   </div>
@@ -206,16 +295,24 @@ export default function UsuariosPage() {
                   </div>
 
                   <div className="col-span-2">
-                    <span className={`px-3 py-1 rounded text-sm ${
-                      u.status === "Activo" ? "bg-green-600" : "bg-yellow-600"
-                    }`}>
-                      {u.status}
+                    <span
+                      className={`px-3 py-1 rounded text-sm ${
+                        u.is_active ? "bg-green-600" : "bg-yellow-600"
+                      }`}
+                    >
+                      {u.is_active ? "Activo" : "Inactivo"}
                     </span>
                   </div>
 
                   <div className="col-span-1 flex gap-3 justify-end">
                     <Pencil className="cursor-pointer hover:text-blue-400" />
-                    <Trash2 className="cursor-pointer hover:text-red-400" />
+                    <Trash2
+                      className="cursor-pointer hover:text-red-400"
+                      onClick={() => {
+                        setDeleteId(u.id);
+                        setOpenDeleteModal(true);
+                      }}
+                    />
                   </div>
                 </div>
               ))}
@@ -224,15 +321,15 @@ export default function UsuariosPage() {
             <div className="flex justify-between items-center mt-6 text-sm text-gray-400">
               <span>
                 Mostrando {(currentPage - 1) * itemsPerPage + 1} -
-                {Math.min(currentPage * itemsPerPage, filteredUsers.length)}
-                {" "}de {filteredUsers.length}
+                {Math.min(currentPage * itemsPerPage, filteredUsers.length)} de{" "}
+                {filteredUsers.length}
               </span>
 
               <div className="flex gap-2">
                 <Button
                   variant="outline"
                   className="bg-gray-900 border-gray-700"
-                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage === 1}
                 >
                   Anterior
@@ -242,7 +339,11 @@ export default function UsuariosPage() {
                   <Button
                     key={i}
                     variant={currentPage === i + 1 ? "default" : "outline"}
-                    className={currentPage === i + 1 ? "bg-blue-600" : "bg-gray-900 border-gray-700"}
+                    className={
+                      currentPage === i + 1
+                        ? "bg-blue-600"
+                        : "bg-gray-900 border-gray-700"
+                    }
                     onClick={() => setCurrentPage(i + 1)}
                   >
                     {i + 1}
@@ -252,17 +353,105 @@ export default function UsuariosPage() {
                 <Button
                   variant="outline"
                   className="bg-gray-900 border-gray-700"
-                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage === totalPages}
                 >
                   Siguiente
                 </Button>
               </div>
             </div>
-
           </div>
         </SidebarInset>
       </div>
+
+   
+      <Dialog open={openDeleteModal} onOpenChange={setOpenDeleteModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirmar Eliminación</DialogTitle>
+          </DialogHeader>
+          <p>¿Seguro que deseas desactivar este usuario?</p>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setOpenDeleteModal(false)}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={deleteUser}>
+              Eliminar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+        <Dialog open={openCreateModal} onOpenChange={setOpenCreateModal}>
+        <DialogContent className="bg-[#0f172a] text-white border border-slate-700 shadow-xl rounded-xl">
+          <DialogHeader>
+            <DialogTitle className="text-xl font-semibold text-white">
+              Crear Usuario
+            </DialogTitle>
+          </DialogHeader>
+
+          <div className="grid gap-4 mt-4">
+            <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder-slate-400"
+              type="text"
+              placeholder="Nombre"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+            />
+
+            <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder-slate-400"
+              type="text"
+              placeholder="Apellido"
+              value={form.surname}
+              onChange={(e) => setForm({ ...form, surname: e.target.value })}
+            />
+
+            <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder-slate-400"
+              type="email"
+              placeholder="Correo"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
+            />
+
+            <Input
+              className="bg-slate-800 border-slate-700 text-white placeholder-slate-400"
+              type="password"
+              placeholder="Contraseña"
+              value={form.password}
+              onChange={(e) => setForm({ ...form, password: e.target.value })}
+            />
+
+            <select
+              className="bg-slate-800 border border-slate-700 text-white rounded p-2"
+              value={form.role}
+              onChange={(e) => setForm({ ...form, role: e.target.value })}
+            >
+              <option value="moderator">Usuario</option>
+              <option value="owner">Administrador</option>
+            </select>
+          </div>
+
+          <DialogFooter className="mt-4">
+            <Button
+              className="border-slate-500 text-white hover:bg-slate-700"
+              onClick={() => setOpenCreateModal(false)}
+            >
+              Cancelar
+            </Button>
+
+            <Button
+              className="bg-indigo-600 hover:bg-indigo-700 text-white"
+              onClick={createUser}
+            >
+              Crear
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
     </SidebarProvider>
-  )
+  );
 }
