@@ -32,7 +32,7 @@ export function AppSidebar() {
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton asChild>
-                <a href="/dashboard" className="flex items-center gap-3 px-6 py-2 hover:bg-[#1E293B] rounded-lg transition">
+                <a href="/home" className="flex items-center gap-3 px-6 py-2 hover:bg-[#1E293B] rounded-lg transition">
                   <Home className="w-5 h-5 text-blue-400" />
                   Dashboard
                 </a>
