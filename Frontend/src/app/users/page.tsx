@@ -4,8 +4,8 @@ import { SidebarProvider, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/Sidebar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search, Trash2, Pencil, UserCircle } from "lucide-react";
-import { ReactNode, useEffect, useState } from "react";
+import { Search, Trash2, Pencil } from "lucide-react";
+import { ReactNode, useEffect, useState, useCallback } from "react";
 import Image from "next/image";
 
 import {
@@ -15,6 +15,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+
 
 const API_URL = "https://testify-dwtn.onrender.com/api";
 
@@ -46,8 +47,18 @@ export default function UsuariosPage() {
   
   const [openDeleteModal, setOpenDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
+  const [isEditing, setIsEditing] = useState(false);
   const [openCreateModal, setOpenCreateModal] = useState(false);
+  const [editId, setEditId] = useState<string | null>(null);
+  
+  const getAuthHeaders = () => {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+    return {
+      "Content-Type": "application/json",
+      ...(token ? { "Authorization": `Bearer ${token}` } : {})
+    }
+  }
+  
   const [form, setForm] = useState({
     name: "",
     surname: "",
@@ -56,21 +67,24 @@ export default function UsuariosPage() {
     role: "moderator",
   });
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
 
-      const res = await fetch(`${API_URL}/users`);
+      const res = await fetch(`${API_URL}/users`, {
+        headers: getAuthHeaders(),
+      });
       if (!res.ok) throw new Error("Error obteniendo usuarios");
 
       const data = await res.json();
+      
+      // Los usuarios están en data.results
+      const usersList = Array.isArray(data) ? data : data.results || [];
 
-      const mapped = data.map((u: User) => ({
+      const mapped = usersList.map((u: User) => ({
         ...u,
+        name: u.name || u.email.split('@')[0],
+        surname: u.surname || "",
         status: u.is_active ? "Activo" : "Inactivo",
         registerDate: new Date(u.created_at).toLocaleDateString("es-MX"),
         avatar:
@@ -80,12 +94,17 @@ export default function UsuariosPage() {
 
       setUsers(mapped);
       setFilteredUsers(mapped);
+      setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
 
   useEffect(() => {
     let filtered = users;
@@ -132,41 +151,49 @@ export default function UsuariosPage() {
 
   const handleSelectItem = (id: string) => {
     const updated = new Set(selectedIds);
-    updated.has(id) ? updated.delete(id) : updated.add(id);
+    if (updated.has(id)) {
+      updated.delete(id);
+    } else {
+      updated.add(id);
+    }
     setSelectedIds(updated);
   };
 
   const createUser = async () => {
-    const res = await fetch(`${API_URL}/users`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(form),
-    });
+    try {
+      const method = isEditing && editId ? "PATCH" : "POST";
+      const url = isEditing && editId ? `${API_URL}/users/${editId}` : `${API_URL}/users`;
 
-    if (!res.ok) {
-      alert("Error creando usuario");
-      return;
+      const res = await fetch(url, {
+        method,
+        headers: getAuthHeaders(),
+        body: JSON.stringify(form),
+      });
+
+      if (!res.ok) {
+        alert(isEditing ? "Error actualizando usuario" : "Error creando usuario");
+        return;
+      }
+
+      setOpenCreateModal(false);
+      setIsEditing(false);
+      setEditId(null);
+      setForm({ name: "", surname: "", email: "", password: "", role: "moderator" });
+
+      fetchUsers();
+    } catch (err) {
+      console.error(err);
+      alert("Error en la petición");
     }
-
-    setOpenCreateModal(false);
-    setForm({
-      name: "",
-      surname: "",
-      email: "",
-      password: "",
-      role: "moderator",
-    });
-
-    fetchUsers();
   };
 
   
   const deleteUser = async () => {
     if (!deleteId) return;
 
-    const res = await fetch(`${API_URL}/users/${deleteId}`, {
+    const res = await fetch(`${API_URL}/users/delete/${deleteId}`, {
       method: "PATCH",
-      headers: { "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ is_active: false }),
     });
 
@@ -305,7 +332,21 @@ export default function UsuariosPage() {
                   </div>
 
                   <div className="col-span-1 flex gap-3 justify-end">
-                    <Pencil className="cursor-pointer hover:text-blue-400" />
+                    <Pencil
+                      className="cursor-pointer hover:text-blue-400"
+                      onClick={() => {
+                        setIsEditing(true);
+                        setEditId(u.id);
+                        setForm({
+                          name: u.name,
+                          surname: u.surname,
+                          email: u.email,
+                          password: "",
+                          role: u.role,
+                        });
+                        setOpenCreateModal(true);
+                      }}
+                    />
                     <Trash2
                       className="cursor-pointer hover:text-red-400"
                       onClick={() => {
@@ -387,7 +428,7 @@ export default function UsuariosPage() {
         <DialogContent className="bg-[#0f172a] text-white border border-slate-700 shadow-xl rounded-xl">
           <DialogHeader>
             <DialogTitle className="text-xl font-semibold text-white">
-              Crear Usuario
+              {isEditing ? "Editar Usuario" : "Crear Usuario"}
             </DialogTitle>
           </DialogHeader>
 
@@ -437,7 +478,12 @@ export default function UsuariosPage() {
           <DialogFooter className="mt-4">
             <Button
               className="border-slate-500 text-white hover:bg-slate-700"
-              onClick={() => setOpenCreateModal(false)}
+              onClick={() => {
+                setOpenCreateModal(false);
+                setIsEditing(false);
+                setEditId(null);
+                setForm({ name: "", surname: "", email: "", password: "", role: "moderator" });
+              }}
             >
               Cancelar
             </Button>
@@ -446,7 +492,7 @@ export default function UsuariosPage() {
               className="bg-indigo-600 hover:bg-indigo-700 text-white"
               onClick={createUser}
             >
-              Crear
+              {isEditing ? "Actualizar" : "Crear"}
             </Button>
           </DialogFooter>
         </DialogContent>
