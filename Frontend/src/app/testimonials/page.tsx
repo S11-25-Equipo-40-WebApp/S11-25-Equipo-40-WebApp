@@ -46,9 +46,22 @@ export default function TestimonialsPage() {
       })
       if (!response.ok) throw new Error("Error fetching testimonials")
 
-      const data: Testimonial[] = await response.json()
-      setTestimonials(data || [])
-      setFilteredTestimonials(data || [])
+    const rawData = await response.json()
+
+    const mapped = rawData.map((t: any) => ({
+      id: t.id,
+      user: t.content?.author_name || "Anónimo",
+      email: t.content?.email || "sin-email",
+      product: t.product?.name || "Sin producto",
+      rating: t.content?.rating || 0,
+      status: t.status || "pending",
+      excerpt: t.content?.content?.slice(0, 60) + "...",
+      avatar: t.avatar || "/default-avatar.png",
+    }))
+
+    setTestimonials(mapped)
+    setFilteredTestimonials(mapped)
+
     } catch (err) {
       console.error(err)
     } finally {
@@ -213,7 +226,7 @@ export default function TestimonialsPage() {
             </div>
 
             <div className="border border-gray-700 rounded-lg overflow-hidden">
-              <div className="bg-gray-900 border-b border-gray-700 px-6 py-4 grid grid-cols-16 gap-4">
+              <div className="bg-gray-900 border-b border-gray-700 px-6 py-4 grid grid-cols-12 gap-4">
                 <div className="col-span-1" title="Seleccionar Todos"><input type="checkbox" onChange={handleSelectAll} /></div>
                 <div className="col-span-3 text-sm font-semibold">USUARIO</div>
                 <div className="col-span-3 text-sm font-semibold">PRODUCTO</div>

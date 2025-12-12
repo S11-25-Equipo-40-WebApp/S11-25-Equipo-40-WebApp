@@ -6,6 +6,8 @@ import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import { Star } from "lucide-react"
+import { useRouter } from "next/navigation"   
+
 
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL!
@@ -23,6 +25,9 @@ const getRandomProduct = () =>
   PRODUCTS[Math.floor(Math.random() * PRODUCTS.length)]
 
 export default function EmbedTestimonialPage() {
+
+  const router = useRouter()  
+
   const [rating, setRating] = useState(0)
   const [loading, setLoading] = useState(false)
   const [success, setSuccess] = useState(false)
@@ -30,20 +35,14 @@ export default function EmbedTestimonialPage() {
   const [category, setCategory] = useState("")
   const [tag, setTag] = useState("")
 
-  // nuevos estados para listas y selección múltiple de tags
   const [categoriesList, setCategoriesList] = useState<string[]>([])
   const [tagsList, setTagsList] = useState<string[]>([])
   const [selectedTags, setSelectedTags] = useState<string[]>([])
-
-  // estados para permitir escribir categoría personalizada y añadir tags manualmente
   const [customCategory, setCustomCategory] = useState<string>("")
   const [isCustomCategory, setIsCustomCategory] = useState<boolean>(false)
   const [tagInput, setTagInput] = useState<string>("")
-
-  // loading flags para evitar interacción hasta traer datos
   const [categoriesLoading, setCategoriesLoading] = useState<boolean>(true)
   const [tagsLoading, setTagsLoading] = useState<boolean>(true)
-
   const [images, setImages] = useState<File[]>([])
 
   const [form, setForm] = useState({
@@ -53,7 +52,17 @@ export default function EmbedTestimonialPage() {
     videoUrl: "",
   })
 
-  // Cargar categorías y tags (endpoints específicos para embed) al montar el componente
+  useEffect(() => {
+    if (success) {
+      const timer = setTimeout(() => {
+        router.push("/testimonials")    
+      }, 2500)
+
+      return () => clearTimeout(timer)
+    }
+  }, [success, router])   
+
+
   useEffect(() => {
     const load = async () => {
       setCategoriesLoading(true)
@@ -90,9 +99,7 @@ export default function EmbedTestimonialPage() {
     load()
   }, [])
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value })
   }
 
@@ -134,7 +141,6 @@ export default function EmbedTestimonialPage() {
         imageUrls = Array.isArray(uploadedData) ? uploadedData : (uploadedData.urls || [])
       }
 
-      /* ---------------- aki se estan creando los testimonios ---------------- */
       const res = await fetch(`${API_URL}/testimonials`, {
         method: "POST",
         headers: {
@@ -171,6 +177,7 @@ export default function EmbedTestimonialPage() {
       })
       setRating(0)
       setImages([])
+
     } catch (err) {
       console.error(err)
       setError("Ocurrió un error al enviar tu testimonio")
@@ -179,14 +186,14 @@ export default function EmbedTestimonialPage() {
     }
   }
 
+
+
   if (success) {
     return (
       <div className="min-h-screen bg-[#0f172a] flex items-center justify-center text-white">
         <div className="text-center">
           <h2 className="text-2xl font-bold mb-2">¡Gracias! ⭐</h2>
-          <p className="text-gray-400">
-            Tu testimonio fue enviado correctamente
-          </p>
+          <p className="text-gray-400">Tu testimonio fue enviado correctamente</p>
         </div>
       </div>
     )
